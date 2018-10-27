@@ -1,0 +1,4 @@
+addons/sourcemod/scripting/*.sp
+!addons/sourcemod/scripting/saxtonhale.sp
+!addons/sourcemod/scripting/vsh
+*smx

@@ -853,7 +853,6 @@ methodmap CBaseBoss
 				damage = flHalfTelefragDamage;
 				PrintCenterText(attacker, "TELEFRAG! You are a pro.");
 				PrintCenterText(this.Index, "TELEFRAG! Be careful around quantum tunneling devices!");
-				Loadout_AwardBadge(attacker, 82, "From The Inside Out");
 				
 				//Try to retrieve the entity under the player, and hopefully this is the teleporter
 				int iGroundEntity = GetEntPropEnt(attacker, Prop_Send, "m_hGroundEntity");
@@ -866,7 +865,6 @@ methodmap CBaseBoss
 						int iBuilder = GetEntPropEnt(iGroundEntity, Prop_Send, "m_hBuilder");
 						if (0 < iBuilder <= MaxClients && IsClientInGame(iBuilder))
 						{
-							Loadout_AwardBadge(iBuilder, 82, "From The Inside Out");
 							SDKHooks_TakeDamage(this.Index, 0, iBuilder, flHalfTelefragDamage);
 						}
 					}
@@ -910,7 +908,7 @@ methodmap CBaseBoss
 			}
 		}
 		
-		if (VSH_SpecialRound(SPECIALROUND_CLASHOFBOSSES) || Loadout_GetGameplayBan(this.Index))
+		if (VSH_SpecialRound(SPECIALROUND_CLASHOFBOSSES))
 		{
 			damage *= 4.0;
 			action = Plugin_Changed;

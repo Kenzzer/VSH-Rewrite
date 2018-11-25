@@ -46,9 +46,6 @@ void Queue_AddPlayerPoints(int iClient, int iPoints)
 		return;
 	}
 	
-	if (Loadout_GetGameplayBan(iClient))
-		iPoints = iPoints/2;
-	
 	g_iClientQueuePoints[iClient] += iPoints;
 	PrintToChat(iClient, "%s %s You have been awarded %d queue points! (Total: %i)", VSH_TAG, VSH_TEXT_COLOR, iPoints, g_iClientQueuePoints[iClient]);
 }

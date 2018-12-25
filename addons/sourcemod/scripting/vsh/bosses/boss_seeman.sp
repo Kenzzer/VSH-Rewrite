@@ -87,7 +87,9 @@ methodmap CSeeMan < CBaseBoss
 	{
 		char attribs[128];
 		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 1.9 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65");
-		return CreateWeapon(this.Index, "tf_weapon_fists", 191, 100, TFQual_Collectors, attribs);
+		int iWep = CreateWeapon(this.Index, "tf_weapon_bottle", 191, 100, TFQual_Collectors, attribs);
+		SetEntProp(iWep, Prop_Send, "m_iWorldModelIndex", -1);
+		return iWep;
 	}
 	
 	public void GetModel(char[] sModel, int length)

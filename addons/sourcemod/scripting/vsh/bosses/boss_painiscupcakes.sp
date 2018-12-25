@@ -141,7 +141,9 @@ methodmap CPainisCupcake < CBaseBoss
 	{
 		char attribs[128];
 		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 3.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65");
-		return CreateWeapon(this.Index, "tf_weapon_shovel", 5, 100, TFQual_Strange, attribs);
+		int iWep = CreateWeapon(this.Index, "tf_weapon_shovel", 196, 100, TFQual_Strange, attribs);
+		SetEntProp(iWep, Prop_Send, "m_iWorldModelIndex", -1);
+		return iWep;
 	}
 	
 	public void GetRoundStartSound(char[] sSound, int length)

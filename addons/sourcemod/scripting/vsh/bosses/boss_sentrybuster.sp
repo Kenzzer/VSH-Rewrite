@@ -25,8 +25,8 @@ methodmap CSentryBuster < CBaseBoss
 		boss.iMaxRageDamage = -1;
 		g_flBusterTauntTime[boss.Index] = 0.0;
 		
-		SendProxy_Unhook(boss.Index, "m_flModelScale", Hook_SentryBusterScale);
-		SendProxy_Hook(boss.Index, "m_flModelScale", Prop_Float, Hook_SentryBusterScale);
+		//SendProxy_Unhook(boss.Index, "m_flModelScale", Hook_SentryBusterScale);
+		//SendProxy_Hook(boss.Index, "m_flModelScale", Prop_Float, Hook_SentryBusterScale);
 	}
 	
 	public int GetBaseHealth()
@@ -223,7 +223,7 @@ methodmap CSentryBuster < CBaseBoss
 	{
 		StopSound(this.Index, SNDCHAN_AUTO, SENTRY_BUSTER_LOOP_SOUND);
 		SetEntProp(this.Index, Prop_Send, "m_bIsMiniBoss", false);
-		SendProxy_Unhook(this.Index, "m_flModelScale", Hook_SentryBusterScale);
+		//SendProxy_Unhook(this.Index, "m_flModelScale", Hook_SentryBusterScale);
 		g_bBlockRagdoll = true;
 		eventInfo.BroadcastDisabled = true;
 	}
@@ -317,7 +317,7 @@ methodmap CSentryBuster < CBaseBoss
 		StopSound(this.Index, SNDCHAN_AUTO, SENTRY_BUSTER_LOOP_SOUND);
 		StopSound(this.Index, SNDCHAN_AUTO, SENTRY_BUSTER_LOOP_SOUND);
 		SetEntProp(this.Index, Prop_Send, "m_bIsMiniBoss", false);
-		SendProxy_Unhook(this.Index, "m_flModelScale", Hook_SentryBusterScale);
+		//SendProxy_Unhook(this.Index, "m_flModelScale", Hook_SentryBusterScale);
 	}
 }
 

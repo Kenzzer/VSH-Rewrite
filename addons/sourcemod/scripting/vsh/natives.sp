@@ -23,5 +23,5 @@ public int Native_VSHIsMinion(Handle plugin, int numParams)
 
 public int Native_VSHIsValid(Handle plugin, int numParams)
 {
-	return g_clientBoss[GetNativeCell(1)].IsValid;
+	return g_clientBoss[GetNativeCell(1)].IsValid();
 }

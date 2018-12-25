@@ -70,7 +70,7 @@ static char g_strDemoRobotBackStab[][] = {
 };
 
 #define DEMO_ROBOT_TURN_INTO_GIANT  			"mvm/giant_heavy/giant_heavy_entrance.wav"
-#define DEMO_ROBOT_THEME						"redsun/vsh/benoist/demorobot/theme.mp3"
+#define DEMO_ROBOT_THEME						"vsh_rewrite/glitched/theme.mp3"
 #define DEMO_ROBOT_DEATH						"mvm/sentrybuster/mvm_sentrybuster_explode.wav"
 #define DEMO_ROBOT_MODEL						"models/bots/demo/bot_demo.mdl"
 #define DEMO_ROBOT_MODEL_GIANT					"models/bots/demo_boss/bot_demo_boss.mdl"
@@ -88,8 +88,8 @@ methodmap CDemoRobot < CBaseBoss
 		boss.iMaxRageDamage = 2200;
 		g_flGrenadeLauncherRemoveTime[boss.Index] = 0.0;
 		
-		SendProxy_Unhook(boss.Index, "m_flModelScale", Hook_GiantScale);
-		SendProxy_Hook(boss.Index, "m_flModelScale", Prop_Float, Hook_GiantScale);
+		//SendProxy_Unhook(boss.Index, "m_flModelScale", Hook_GiantScale);
+		//SendProxy_Hook(boss.Index, "m_flModelScale", Prop_Float, Hook_GiantScale);
 	}
 	
 	public int GetBaseHealth()
@@ -186,7 +186,7 @@ methodmap CDemoRobot < CBaseBoss
 		return Plugin_Continue;
 	}
 	
-	public void GetMusicInfo(char[] sSound, int length, float &time)
+	public void GetMusicInfo(char[] sSound, int length, float &time, float &delay)
 	{
 		strcopy(sSound, length, DEMO_ROBOT_THEME);
 		time = 140.0;
@@ -259,7 +259,7 @@ methodmap CDemoRobot < CBaseBoss
 	public void Destroy()
 	{
 		SetEntProp(this.Index, Prop_Send, "m_bIsMiniBoss", false);
-		SendProxy_Unhook(this.Index, "m_flModelScale", Hook_GiantScale);
+		//SendProxy_Unhook(this.Index, "m_flModelScale", Hook_GiantScale);
 	}
 }
 

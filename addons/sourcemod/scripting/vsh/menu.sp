@@ -36,7 +36,7 @@ void Menus_Setup()
 	StrCat(buffer, sizeof(buffer), "\n \n");
 	StrCat(buffer, sizeof(buffer), "Eggman - The creator of the first VSH\n");
 	StrCat(buffer, sizeof(buffer), "Alex Turtle & Chillax - Great test subjects!\n");
-	StrCat(buffer, sizeof(buffer), "RedSun - Host community!\n");
+	StrCat(buffer, sizeof(buffer), "Dispenzor's Fun Servers - Host community!\n");
 	StrCat(buffer, sizeof(buffer), "---[UNCLAIMED CREDIT SLOT]---\n");
 	StrCat(buffer, sizeof(buffer), "---[UNCLAIMED CREDIT SLOT]---\n");
 	StrCat(buffer, sizeof(buffer), "---[UNCLAIMED CREDIT SLOT]---\n");
@@ -97,17 +97,17 @@ void Menus_Setup()
 	Format(buffer, sizeof(buffer), "Disable");
 	AddMenuItem(g_hBossSelect, "0", buffer);
 	strcopy(buffer, sizeof(buffer), "Enable");
-	AddMenuItem(g_hBossSelect, "0", buffer);
+	AddMenuItem(g_hBossSelect, "1", buffer);
 	
 	g_hRevivalSelect = CreateMenu(Menu_Toggle);
 	SetMenuTitle(g_hRevivalSelect, "Toggle boss selection \n \n");
 	Format(buffer, sizeof(buffer), "Disable");
 	AddMenuItem(g_hRevivalSelect, "0", buffer);
 	strcopy(buffer, sizeof(buffer), "Enable");
-	AddMenuItem(g_hRevivalSelect, "0", buffer);
+	AddMenuItem(g_hRevivalSelect, "1", buffer);
 }
 
-public int Menu_Main(Handle menu, MenuAction action,int param1,int param2)
+public int Menu_Main(Handle menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -121,7 +121,7 @@ public int Menu_Main(Handle menu, MenuAction action,int param1,int param2)
 	}
 }
 
-public int Menu_Settings(Handle menu, MenuAction action,int param1,int param2)
+public int Menu_Settings(Handle menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -133,7 +133,7 @@ public int Menu_Settings(Handle menu, MenuAction action,int param1,int param2)
 	}
 }
 
-public int Menu_Toggle(Handle menu, MenuAction action,int param1,int param2)
+public int Menu_Toggle(Handle menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -145,7 +145,7 @@ public int Menu_Toggle(Handle menu, MenuAction action,int param1,int param2)
 	}
 }
 
-public int Menu_Credits(Handle menu, MenuAction action,int param1,int param2)
+public int Menu_Credits(Handle menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -157,7 +157,7 @@ public int Menu_Credits(Handle menu, MenuAction action,int param1,int param2)
 	}
 }
 
-public int Menu_Credits2(Handle menu, MenuAction action,int param1,int param2)
+public int Menu_Credits2(Handle menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -169,7 +169,7 @@ public int Menu_Credits2(Handle menu, MenuAction action,int param1,int param2)
 	}
 }
 
-public int Menu_Credits3(Handle menu, MenuAction action,int param1,int param2)
+public int Menu_Credits3(Handle menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{

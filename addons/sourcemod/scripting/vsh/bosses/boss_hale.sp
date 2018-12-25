@@ -1,91 +1,91 @@
 #define HALE_MODEL "models/player/saxton_hale_jungle_inferno/saxton_hale.mdl"
 
 static char g_strHaleRoundStart[][] = {
-	"saxton_hale/saxton_hale_responce_start1.mp3",
-	"saxton_hale/saxton_hale_responce_start2.mp3",
-	"saxton_hale/saxton_hale_responce_start3.mp3",
-	"saxton_hale/saxton_hale_responce_start4.mp3",
-	"saxton_hale/saxton_hale_responce_start5.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_start1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_start2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_start3.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_start4.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_start5.mp3"
 };
 
 static char g_strHaleWin[][] = {
-	"saxton_hale/saxton_hale_responce_win1.mp3",
-	"saxton_hale/saxton_hale_responce_win2.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_win1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_win2.mp3"
 };
 
 static char g_strHaleLose[][] = {
-	"saxton_hale/saxton_hale_responce_fail1.mp3",
-	"saxton_hale/saxton_hale_responce_fail2.mp3",
-	"saxton_hale/saxton_hale_responce_fail3.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_fail1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_fail2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_fail3.mp3"
 };
 
 static char g_strHaleRage[][] = {
-	"saxton_hale/saxton_hale_responce_rage1.mp3",
-	"saxton_hale/saxton_hale_responce_rage2.mp3",
-	"saxton_hale/saxton_hale_responce_rage3.mp3",
-	"saxton_hale/saxton_hale_responce_rage4.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_rage1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_rage2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_rage3.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_rage4.mp3"
 };
 
 static char g_strHaleJump[][] = {
-	"saxton_hale/saxton_hale_responce_jump1.mp3",
-	"saxton_hale/saxton_hale_responce_jump2.mp3",
-	"saxton_hale/saxton_hale_132_jump_1.mp3",
-	"saxton_hale/saxton_hale_132_jump_2.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_jump1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_jump2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_132_jump_1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_132_jump_2.mp3"
 };
 
 static char g_strHaleKillScout[][] = {
-	"saxton_hale/saxton_hale_132_kill_scout.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_132_kill_scout.mp3"
 };
 
 static char g_strHaleKillSniper[][] = {
-	"saxton_hale/saxton_hale_responce_kill_sniper1.mp3",
-	"saxton_hale/saxton_hale_responce_kill_sniper2.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_kill_sniper1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_kill_sniper2.mp3"
 };
 
 static char g_strHaleKillDemoMan[][] = {
-	"saxton_hale/saxton_hale_132_kill_demo.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_132_kill_demo.mp3"
 };
 
 static char g_strHaleKillMedic[][] = {
-	"saxton_hale/saxton_hale_responce_kill_medic.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_kill_medic.mp3"
 };
 
 static char g_strHaleKillHeavy[][] = {
-	"saxton_hale/saxton_hale_132_kill_heavy.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_132_kill_heavy.mp3"
 };
 
 static char g_strHaleKillPyro[][] = {
-	"saxton_hale/saxton_hale_132_kill_w_and_m1.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_132_kill_w_and_m1.mp3"
 };
 
 static char g_strHaleKillSpy[][] = {
-	"saxton_hale/saxton_hale_responce_kill_spy1.mp3",
-	"saxton_hale/saxton_hale_responce_kill_spy2.mp3",
-	"saxton_hale/saxton_hale_132_kill_spie.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_kill_spy1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_kill_spy2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_132_kill_spie.mp3"
 };
 
 static char g_strHaleKillEngie[][] = {
-	"saxton_hale/saxton_hale_132_kill_engie_1.mp3",
-	"saxton_hale/saxton_hale_132_kill_engie_2.mp3",
-	"saxton_hale/saxton_hale_responce_kill_eggineer1.mp3",
-	"saxton_hale/saxton_hale_responce_kill_eggineer1.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_132_kill_engie_1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_132_kill_engie_2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_kill_eggineer1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_kill_eggineer1.mp3"
 };
 
 static char g_strHaleLastMan[][] = {
-	"saxton_hale/saxton_hale_responce_2.mp3",
-	"saxton_hale/saxton_hale_132_last.mp3",
-	"saxton_hale/saxton_hale_responce_lastman1.mp3",
-	"saxton_hale/saxton_hale_responce_lastman2.mp3",
-	"saxton_hale/saxton_hale_responce_lastman3.mp3",
-	"saxton_hale/saxton_hale_responce_lastman4.mp3",
-	"saxton_hale/saxton_hale_responce_lastman5.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_132_last.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_lastman1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_lastman2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_lastman3.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_lastman4.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_responce_lastman5.mp3"
 };
 
 static char g_strHaleBackStabbed[][] = {
-	"saxton_hale/saxton_hale_132_stub_1.mp3",
-	"saxton_hale/saxton_hale_132_stub_2.mp3",
-	"saxton_hale/saxton_hale_132_stub_3.mp3",
-	"saxton_hale/saxton_hale_132_stub_4.mp3"
+	"vsh_rewrite/saxton_hale/saxton_hale_132_stub_1.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_132_stub_2.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_132_stub_3.mp3",
+	"vsh_rewrite/saxton_hale/saxton_hale_132_stub_4.mp3"
 };
 
 methodmap CSaxtonHale < CBaseBoss
@@ -116,7 +116,7 @@ methodmap CSaxtonHale < CBaseBoss
 	{
 		char attribs[128];
 		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 3.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65 ; 214 ; %d", GetRandomInt(9999, 99999));
-		return CreateWeapon(this.Index, "tf_weapon_fists", 195, 100, TFQual_Strange, attribs);
+		return CreateWeapon(this.Index, "tf_weapon_shovel", 6, 100, TFQual_Strange, attribs);
 	}
 	
 	public void GetModel(char[] sModel, int length)

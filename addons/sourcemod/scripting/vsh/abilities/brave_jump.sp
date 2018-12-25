@@ -121,7 +121,7 @@ methodmap CBraveJump < IAbility
 		if (this.iJumpCharge > 0)
 			ShowSyncHudText(this.Client, g_hJumpHUD, "Jump charge: %0.2f%%. Look up and stand up to use super-jump.", (float(this.iJumpCharge)/float(this.iMaxJumpCharge))*100.0);
 		else
-			ShowSyncHudText(this.Client, g_hJumpHUD, "Hold left click or crouch to use your super-jump!");
+			ShowSyncHudText(this.Client, g_hJumpHUD, "Hold right click or crouch to use your super-jump!");
 		
 		if (g_flJumpCooldownWait[this.Client] != 0.0 && g_flJumpCooldownWait[this.Client] > GetGameTime())
 		{

@@ -448,6 +448,17 @@ methodmap CBaseBoss
 		}
 	}
 	
+	public void GetRoundStartMusic(char [] sSound, int length)
+	{
+		Format(sSound, length, "");
+		if (this.FindFunction("GetRoundStartMusic"))
+		{
+			Call_PushStringEx(sSound, length, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_PushCell(length);
+			Call_Finish();
+		}
+	}
+	
 	public void GetRoundStartSound(char[] sSound, int length)
 	{
 		Format(sSound, length, "");
@@ -538,15 +549,18 @@ methodmap CBaseBoss
 		}
 	}
 	
-	public void GetMusicInfo(char[] sSound, int length, float &time)
+	public void GetMusicInfo(char[] sSound, int length, float &time, float &delay)
 	{
 		Format(sSound, length, "");
 		time = -1.0;
+		delay = -1.0;
+		
 		if (this.FindFunction("GetMusicInfo"))
 		{
 			Call_PushStringEx(sSound, length, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 			Call_PushCell(length);
 			Call_PushFloatRef(time);
+			Call_PushFloatRef(delay);
 			Call_Finish();
 		}
 	}
@@ -567,7 +581,7 @@ methodmap CBaseBoss
 	public void GetEyeHeigth(float vecEyeHeight[3])
 	{
 		TFClassType class = TF2_GetPlayerClass(this.Index);
-		vecEyeHeight = g_TFClassViewVectors[view_as<int>(class)];
+		//vecEyeHeight = g_TFClassViewVectors[view_as<int>(class)];
 		
 		if (this.FindFunction("GetEyeHeigth"))
 		{
@@ -1021,7 +1035,9 @@ stock int CreateWeapon(int client, char[] sName, int index, int level, int qual,
 	int count = ExplodeString(att, " ; ", atts, 32, 32);
 	if (count > 1)
 	{
-		TF2Items_SetNumAttributes(hWeapon, count/2);
+		int iTotalCount = count/2;
+		TF2Items_SetNumAttributes(hWeapon, iTotalCount);
+		
 		int i2 = 0;
 		for (int i = 0; i < count; i += 2)
 		{
@@ -1034,5 +1050,12 @@ stock int CreateWeapon(int client, char[] sName, int index, int level, int qual,
 
 	int entity = TF2Items_GiveNamedItem(client, hWeapon);
 	delete hWeapon;
+	
+	// Set Benoist as the maker of every boss weapon (if possible)
+	TF2Attrib_SetByDefIndex(entity, 228, view_as<float>(76561198059675572));
+	Address AttribAddress = TF2Attrib_GetByDefIndex(entity, 228);
+	if (AttribAddress > view_as<Address>(3000))
+		StoreToAddress(AttribAddress+view_as<Address>(8), 76561198059675572, NumberType_Int32);
+	
 	return entity;
 }

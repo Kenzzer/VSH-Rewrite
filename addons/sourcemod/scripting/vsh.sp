@@ -1205,7 +1205,8 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE))
-			iLastAlive++;
+			if (g_clientBoss[i] == INVALID_BOSS || !g_clientBoss[i].IsMinion)
+				iLastAlive++;
 	}
 	if (0 < iLastAlive <= 4)
 	{
@@ -1748,17 +1749,17 @@ public void Client_OnThink(int iClient)
 		g_clientBoss[iClient].Think();
 	else
 	{
-		if (Client_HasFlag(iClient, VSH_ZOMBIE) && !TF2_IsPlayerInCondition(iClient, TFCond_Bleeding))
+		if (Client_HasFlag(iClient, VSH_ZOMBIE))
 		{
-			int iActiveBoss = GetClientOfUserId(g_iUserActiveBoss);
-			if (0 < iActiveBoss <= MaxClients && IsClientInGame(iActiveBoss) && g_clientBoss[iActiveBoss].IsValid())
+			if (!TF2_IsPlayerInCondition(iClient, TFCond_Bleeding))
+				TF2_MakeBleed(iClient, iClient, 99999.0);
+			if (g_flClientZombieLastDamage[iClient] == 0.0 || g_flClientZombieLastDamage[iClient] <= GetGameTime()-1.0)
 			{
-				TF2_MakeBleed(iClient, iActiveBoss, 99999.0);
-				if (g_flClientZombieLastDamage[iClient] == 0.0 || g_flClientZombieLastDamage[iClient] <= GetGameTime()-1.0)
-				{
-					SDKHooks_TakeDamage(iClient, 0, iActiveBoss, float(RoundToCeil(SDK_GetMaxHealth(iClient)*0.04)));
-					g_flClientZombieLastDamage[iClient] = GetGameTime();
-				}
+				float flDamage = float(RoundToCeil(SDK_GetMaxHealth(iClient)*0.04));
+				if (flDamage < 1.0) flDamage = 1.0;
+				
+				SDKHooks_TakeDamage(iClient, 0, iClient, flDamage);
+				g_flClientZombieLastDamage[iClient] = GetGameTime();
 			}
 		}
 		

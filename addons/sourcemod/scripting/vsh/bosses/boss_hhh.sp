@@ -1,5 +1,6 @@
 #define HHH_MODEL 	"models/bots/headless_hatman.mdl"
 #define HHH_RAGE	"vo/halloween_boss/knight_alert.mp3"
+#define HHH_THEME	"ui/holiday/gamestartup_halloween.mp3"
 
 static char g_strHHHRoundStart[][] =
 {
@@ -61,7 +62,7 @@ methodmap CHHH < CBaseBoss
 	
 	public TFClassType GetClass()
 	{
-		return TFClass_Soldier;
+		return TFClass_DemoMan;
 	}
 	
 	public int SpawnWeapon()
@@ -121,10 +122,17 @@ methodmap CHHH < CBaseBoss
 		return Plugin_Continue;
 	}
 	
+	public void GetMusicInfo(char[] sSound, int length, float &time, float &delay)
+	{
+		strcopy(sSound, length, HHH_THEME);
+		time = 80.0;
+	}
+	
 	public void Precache()
 	{
 		PrecacheModel(HHH_MODEL);
 		PrecacheSound(HHH_RAGE);
+		PrecacheSound(HHH_THEME);
 		
 		for (int i = 0; i <= sizeof(g_strHHHBackStabbed)-1; i++) PrecacheSound(g_strHHHBackStabbed[i]);
 		for (int i = 0; i <= sizeof(g_strHHHJump)-1; i++) PrecacheSound(g_strHHHJump[i]);

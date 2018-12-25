@@ -131,7 +131,7 @@ methodmap CAnnouncer < CBaseBoss
 	{
 		strcopy(sSound, length, ADMIN_THEME);
 		time = 67.0;
-		delay = 8.0;
+		delay = 7.7;
 	}
 	
 	public Action OnTakeDamage(int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)

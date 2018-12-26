@@ -988,7 +988,7 @@ void Frame_BossRageMusic(CBaseBoss boss)
 		return;
 	for (int i = 1; i <= MaxClients; i++)
 		if (IsClientInGame(i))
-			EmitSoundToClient(i, g_sClientRageMusic[boss.Index], boss.Index, SNDCHAN_AUTO, SNDLEVEL_HELICOPTER, SND_CHANGEVOL, g_flClientBossRageMusicVolume[boss.Index]);
+			EmitSoundToClient(i, g_sClientRageMusic[boss.Index], boss.Index, SNDCHAN_AUTO, SNDLEVEL_GUNFIRE, SND_CHANGEVOL, g_flClientBossRageMusicVolume[boss.Index]);
 	if (g_flClientBossRageMusicVolume[boss.Index] == 0.0)
 		return;
 	RequestFrame(Frame_BossRageMusic, boss);

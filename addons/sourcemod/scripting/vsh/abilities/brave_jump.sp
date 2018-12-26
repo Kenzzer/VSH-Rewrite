@@ -185,7 +185,7 @@ methodmap CBraveJump < IAbility
 				char sSound[PLATFORM_MAX_PATH];
 				g_clientBoss[this.Client].GetAbilitySound(sSound, sizeof(sSound), "CBraveJump");
 				if (strcmp(sSound, "") != 0)
-					EmitSoundToAll(sSound, this.Client, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+					EmitSoundToAll(sSound, this.Client, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT);
 			}
 		}
 	}

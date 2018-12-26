@@ -201,24 +201,29 @@ methodmap CCBS < CBaseBoss
 	
 	public void OnRage(bool bSuperRage)
 	{
-		TF2_RemoveItemInSlot(this.Index, WeaponSlot_Primary);
-		
-		int iWep = CreateWeapon(this.Index, "tf_weapon_compound_bow", 1005, 100, TFQual_Unusual, "2 ; 2.1 ; 6 ; 0.5 ; 37 ; 0.0 ; 280 ; 19 ; 551 ; 1");
-		if (iWep > MaxClients)
+		int iWep = GetPlayerWeaponSlot(this.Index, WeaponSlot_Primary);
+		if (iWep <= MaxClients)
 		{
-			SetEntProp(iWep, Prop_Send, "m_bValidatedAttachedEntity", true);
-			EquipPlayerWeapon(this.Index, iWep);
-			
-			int iBossTeam = GetClientTeam(this.Index);
-			int iEnemyTeam = (iBossTeam == TFTeam_Red) ? TFTeam_Blue : TFTeam_Red;
-			
-			int iArrows = VSH_GetTeamCount(iEnemyTeam, true, false, false);
-			if (iArrows > 9) iArrows = 9;
-			SetEntProp(this.Index, Prop_Send, "m_iAmmo", iArrows, _, GetEntProp(iWep, Prop_Send, "m_iPrimaryAmmoType"));
-			SetEntPropEnt(this.Index, Prop_Send, "m_hActiveWeapon", iWep);
-			
-			SetEntProp(iWep, Prop_Send, "m_iClip1", 0);
+			iWep = CreateWeapon(this.Index, "tf_weapon_compound_bow", 1005, 100, TFQual_Unusual, "2 ; 2.1 ; 6 ; 0.5 ; 37 ; 0.0 ; 280 ; 19 ; 551 ; 1");
+			if (iWep > MaxClients)
+			{
+				SetEntProp(iWep, Prop_Send, "m_bValidatedAttachedEntity", true);
+				EquipPlayerWeapon(this.Index, iWep);
+				
+				SetEntProp(this.Index, Prop_Send, "m_iAmmo", 0, _, GetEntProp(iWep, Prop_Send, "m_iPrimaryAmmoType"));
+				SetEntProp(iWep, Prop_Send, "m_iClip1", 0);
+			}
 		}
+		
+		int iBossTeam = GetClientTeam(this.Index);
+		int iEnemyTeam = (iBossTeam == TFTeam_Red) ? TFTeam_Blue : TFTeam_Red;
+		
+		int iArrows = VSH_GetTeamCount(iEnemyTeam, true, false, false);
+		if (iArrows > 9) iArrows = 9;
+		if (bSuperRage) iArrows *= 2;
+		
+		SetEntProp(this.Index, Prop_Send, "m_iAmmo", iArrows, _, GetEntProp(iWep, Prop_Send, "m_iPrimaryAmmoType"));
+		SetEntPropEnt(this.Index, Prop_Send, "m_hActiveWeapon", iWep);
 	}
 	
 	public void OnPlayerKilled(int iVictim, Event eventInfo)

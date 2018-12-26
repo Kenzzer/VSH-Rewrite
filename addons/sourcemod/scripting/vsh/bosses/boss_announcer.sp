@@ -76,7 +76,7 @@ methodmap CAnnouncer < CBaseBoss
 	
 	public void GetName(char[] sName, int length)
 	{
-		strcopy(sName, length, "Administrator");
+		strcopy(sName, length, "The Administrator");
 	}
 	
 	public void GetModel(char[] sModel, int length)
@@ -146,21 +146,28 @@ methodmap CAnnouncer < CBaseBoss
 	
 	public void OnRage(bool bSuperRage)
 	{
-		TF2_RemoveItemInSlot(this.Index, WeaponSlot_Primary);
-		
-		int iWep = CreateWeapon(this.Index, "tf_weapon_revolver", 61, 100, TFQual_Unusual, "2 ; 20.0 ; 37 ; 0.0");
-		if (iWep > MaxClients)
+		int iWep = GetPlayerWeaponSlot(this.Index, WeaponSlot_Primary);
+		if (iWep <= MaxClients)
 		{
-			SetEntProp(iWep, Prop_Send, "m_bValidatedAttachedEntity", true);
-			EquipPlayerWeapon(this.Index, iWep);
-			
-			SetEntProp(this.Index, Prop_Send, "m_iAmmo", 0, _, GetEntProp(iWep, Prop_Send, "m_iPrimaryAmmoType"));
-			SetEntPropEnt(this.Index, Prop_Send, "m_hActiveWeapon", iWep);
-			
-			int iBossTeam = GetClientTeam(this.Index);
-			int iEnemyTeam = (iBossTeam == TFTeam_Red) ? TFTeam_Blue : TFTeam_Red;
-			SetEntProp(iWep, Prop_Send, "m_iClip1", RoundToCeil(VSH_GetTeamCount(iEnemyTeam, true, false, false) / 4.0));
+			iWep = CreateWeapon(this.Index, "tf_weapon_revolver", 61, 100, TFQual_Unusual, "2 ; 20.0 ; 37 ; 0.0");
+			if (iWep > MaxClients)
+			{
+				SetEntProp(iWep, Prop_Send, "m_bValidatedAttachedEntity", true);
+				EquipPlayerWeapon(this.Index, iWep);
+				
+				SetEntProp(iWep, Prop_Send, "m_iClip1", 0);
+				SetEntProp(this.Index, Prop_Send, "m_iAmmo", 0, _, GetEntProp(iWep, Prop_Send, "m_iPrimaryAmmoType"));
+			}
 		}
+		
+		SetEntPropEnt(this.Index, Prop_Send, "m_hActiveWeapon", iWep);
+		
+		int iBossTeam = GetClientTeam(this.Index);
+		int iEnemyTeam = (iBossTeam == TFTeam_Red) ? TFTeam_Blue : TFTeam_Red;
+		int iBullets = RoundToCeil(VSH_GetTeamCount(iEnemyTeam, true, false, false) / 4.0);
+		if (bSuperRage) iBullets *= 2;
+		
+		SetEntProp(iWep, Prop_Send, "m_iClip1", GetEntProp(iWep, Prop_Send, "m_iClip1")+iBullets);
 	}
 	
 	public void Precache()

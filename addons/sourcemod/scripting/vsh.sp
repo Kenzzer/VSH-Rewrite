@@ -12,7 +12,7 @@
 //#include <benextension>
 //#include <sendproxy>
 
-#define PLUGIN_VERSION "0.0.3"
+#define PLUGIN_VERSION "0.0.3b"
 
 #define MAX_BUTTONS 26
 
@@ -72,6 +72,9 @@
 
 #define VSH_ALLOWED_TO_SPAWN_BOSS_TEAM	(1 << 0)
 #define VSH_ZOMBIE					(1 << 1)
+
+#define BEAM_MATERIAL		"materials/sprites/laserbeam.vmt"
+int BEAM_MODEL_INDEX		= -1;
 
 enum
 {
@@ -163,6 +166,8 @@ enum
 	LAST_SHARED_COLLISION_GROUP
 };
 
+const float PI = 3.1415926535897932384626433832795;
+static float g_flLastArrowDrawTime;
 
 //ConVars
 ConVar tf_arena_use_queue;
@@ -656,6 +661,8 @@ public void OnMapStart()
 			return;
 		}
 		
+		g_flLastArrowDrawTime = GetGameTime();
+		
 		config.Refresh();
 		SetupClassDefaultWeapons();
 		
@@ -689,6 +696,8 @@ public void OnMapStart()
 		PrecacheSound(BOSS_BACKSTAB_SOUND);
 		PrecacheSound("player/doubledonk.wav");
 		PrepareSound(CP_UNLOCK_SOUND);
+		
+		BEAM_MODEL_INDEX = PrecacheModel(BEAM_MATERIAL);
 		g_bEnabled = true;
 	}
 }
@@ -709,15 +718,51 @@ public void OnGameFrame()
 		int iBossTeam = GetClientTeam(iActiveBoss);
 		if (iBossTeam > 1)
 		{
-			g_iHealthBarHealth = (IsPlayerAlive(iActiveBoss)) ? GetEntProp(iActiveBoss, Prop_Send, "m_iHealth") : 0;
+			static float flDefAng = 0.0;
+			
+			flDefAng = AngleNormalize(flDefAng);
+			
+			bool bAlive = IsPlayerAlive(iActiveBoss);
+			bool bDrawArrow = (GetGameTime()-g_flLastArrowDrawTime > 0.05);
+			g_iHealthBarHealth = (IsPlayerAlive(bAlive)) ? GetEntProp(iActiveBoss, Prop_Send, "m_iHealth") : 0;
 			g_iHealthBarMaxHealth = SDK_GetMaxHealth(iActiveBoss);
+			
+			float vecPos[3], vecMaxs[3];
+			int iColor[4] = {255, 0, 0, 255};
+			if (iBossTeam == TFTeam_Blue)
+			{
+				iColor[0] = 0;
+				iColor[2] = 255;
+			}
+			
+			if (bAlive && bDrawArrow)
+			{
+				GetClientAbsOrigin(iActiveBoss, vecPos);
+				GetEntPropVector(iActiveBoss, Prop_Send, "m_vecMaxs", vecMaxs);
+				vecPos[2] += vecMaxs[2]+10.0;
+				
+				VSH_DisplayArrow(vecPos, flDefAng, iColor);
+			}
+			
+			if (bDrawArrow)
+				g_flLastArrowDrawTime = GetGameTime();
 			
 			for (int iAlly = 1; iAlly <= MaxClients; iAlly++)
 			{
 				if (iAlly != iActiveBoss && IsClientInGame(iAlly) && GetClientTeam(iAlly) == iBossTeam && g_clientBoss[iAlly].IsValid() && !g_clientBoss[iAlly].IsMinion)
 				{
 					if (IsPlayerAlive(iAlly))
+					{
 						g_iHealthBarHealth += GetEntProp(iAlly, Prop_Send, "m_iHealth");
+						
+						if (bDrawArrow)
+						{
+							GetClientAbsOrigin(iAlly, vecPos);
+							GetEntPropVector(iAlly, Prop_Send, "m_vecMaxs", vecMaxs);
+							vecPos[2] += vecMaxs[2]+10.0;
+							VSH_DisplayArrow(vecPos, flDefAng, iColor);
+						}
+					}
 					g_iHealthBarMaxHealth += SDK_GetMaxHealth(iActiveBoss);
 				}
 			}
@@ -726,6 +771,8 @@ public void OnGameFrame()
 			if(healthBarValue > 255) healthBarValue = 255;
 			
 			SetEntProp(iHealthBar, Prop_Send, "m_iBossHealthPercentageByte", healthBarValue);
+			
+			flDefAng += 0.02;
 		}
 	}
 	else
@@ -748,7 +795,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		AcceptEntityInput(iEntity, "Kill");
 		g_bBlockRagdoll = false;
 	}
-	else if(strncmp(sClassname, "item_healthkit_", 15) == 0 || strcmp(sClassname, "func_regenerate") == 0)
+	else if(strncmp(sClassname, "item_healthkit_", 15) == 0 || strncmp(sClassname, "item_ammopack_", 14) == 0 || strcmp(sClassname, "func_regenerate") == 0)
 	{
 		SDKHook(iEntity, SDKHook_Touch, Boss_OnTouch);
 	}
@@ -2254,7 +2301,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 			{
 				if (!bIsVictimBoss)
 				{
-					//Drain cloack meter if attacked by a boss
+					// Drain cloack meter if attacked by a boss
 					if (TF2_IsPlayerInCondition(victim, TFCond_Cloaked))
 					{
 						damagetype &= ~DMG_CRIT;
@@ -2794,7 +2841,7 @@ bool Client_HasFlag(int iClient, int flag)
 
 public Action Boss_OnTouch(int iEntity, int iToucher)
 {
-	//Don't allow bosses to pick up health kit
+	//Don't allow bosses to pick up health kit or ammo pack
 	if (iToucher >= 1 && iToucher <= MaxClients && IsClientInGame(iToucher) && IsPlayerAlive(iToucher) && g_clientBoss[iToucher].IsValid())
 		return Plugin_Handled;
 	return Plugin_Continue;
@@ -3351,6 +3398,58 @@ stock int VSH_IsMaker(int iClient)
 	return (strcmp(auth, "[U:1:99409844]") == 0 || CheckCommandAccess(iClient, "vsh_cmd_access", ADMFLAG_ROOT));
 }
 
+stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4])
+{
+	float vecRight[3], vecRight2[3], vecLeft[3], vecLeft2[3];
+	
+	float flDist = 25.0;
+	
+	float flX = flDist*Cosine(vecAng);
+	float flY = flDist*Sine(vecAng);
+	
+	float flX2 = flDist*Cosine(vecAng+PI);
+	float flY2 = flDist*Sine(vecAng+PI);
+	
+	vecRight[0] = vecPos[0] + flX;
+	vecRight[1] = vecPos[1] + flY;
+	vecRight[2] = vecPos[2] + 30.0;
+	
+	vecLeft[0] = vecPos[0] + flX2;
+	vecLeft[1] = vecPos[1] + flY2;
+	vecLeft[2] = vecPos[2] + 30.0;
+	
+	vecRight2[0] = vecPos[0] + flX/2.0;
+	vecRight2[1] = vecPos[1] + flY/2.0;
+	vecRight2[2] = vecPos[2] + 70.0;
+	
+	vecLeft2[0] = vecPos[0] + flX2/2.0;
+	vecLeft2[1] = vecPos[1] + flY2/2.0;
+	vecLeft2[2] = vecPos[2] + 70.0;
+	
+	TE_SetupBeamPoints(vecPos, vecRight, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
+	TE_SendToAll();
+	TE_SetupBeamPoints(vecPos, vecLeft, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
+	TE_SendToAll();
+	
+	float vecTemp[3];
+	vecTemp = vecRight2;
+	vecTemp[2] = vecRight[2];
+	TE_SetupBeamPoints(vecRight, vecTemp, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
+	TE_SendToAll();
+	TE_SetupBeamPoints(vecTemp, vecRight2, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
+	TE_SendToAll();
+	
+	vecTemp = vecLeft2;
+	vecTemp[2] = vecLeft[2];
+	TE_SetupBeamPoints(vecLeft, vecTemp, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
+	TE_SendToAll();
+	TE_SetupBeamPoints(vecTemp, vecLeft2, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
+	TE_SendToAll();
+	
+	TE_SetupBeamPoints(vecRight2, vecLeft2, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
+	TE_SendToAll();
+}
+
 stock void BroadcastSoundToTeam(int team, const char[] strSound)
 {
 	switch(team)
@@ -3409,6 +3508,13 @@ stock int FindStringIndex2(int tableidx, const char[] str)
 	}
 	
 	return INVALID_STRING_INDEX;
+}
+
+stock float AngleNormalize(float angle)
+{
+	while (angle > PI) angle -= PI;
+	while (angle < -PI) angle += PI;
+	return angle;
 }
 
 void UTIL_ScreenShake(float center[3], float amplitude, float frequency, float duration, float radius, int command, bool airShake)

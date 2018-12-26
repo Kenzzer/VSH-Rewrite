@@ -74,6 +74,22 @@ methodmap CHHH < CBaseBoss
 		return iWep;
 	}
 	
+	public void Spawn()
+	{
+		float vecMins[3], vecMaxs[3];
+		
+		GetEntPropVector(this.Index, Prop_Send, "m_vecMaxs", vecMaxs);
+		GetEntPropVector(this.Index, Prop_Send, "m_vecMins", vecMins);
+		
+		ScaleVector(vecMins, 2.0);
+		ScaleVector(vecMaxs, 2.0);
+		
+		SetEntPropVector(this.Index, Prop_Send, "m_vecMinsPreScaled", vecMins);
+		SetEntPropVector(this.Index, Prop_Send, "m_vecMaxsPreScaled", vecMaxs);
+		SetEntPropVector(this.Index, Prop_Send, "m_vecMaxs", vecMaxs);
+		SetEntPropVector(this.Index, Prop_Send, "m_vecMins", vecMins);
+	}
+	
 	public void GetName(char[] sName, int length)
 	{
 		strcopy(sName, length, "Headless Horseless Horseman");

@@ -2159,7 +2159,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 							Client_AddHealth(attacker, RoundToNearest(flVal), RoundToNearest(flVal));
 						
 						if (TF2_WeaponFindAttribute(weapon, ATTRIB_MARK_FOR_DEATH, flVal) && flVal > 0.0)
-							g_clientBoss[attacker].iRageDamage -= config.LookupInt(g_cvMarkForDeathRageDamageDrain);
+							g_clientBoss[victim].iRageDamage -= config.LookupInt(g_cvMarkForDeathRageDamageDrain);
 							
 						if (TF2_WeaponFindAttribute(weapon, ATTRIB_CRIT_LAUGH, flVal) && flVal > 0.0)//Don't allow items using that attribute to crit on bosses
 						{

@@ -120,7 +120,8 @@ methodmap CSeeldier < CBaseBoss
 		char attribs[128];
 		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 1.9 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65");
 		int iWep = CreateWeapon(this.Index, "tf_weapon_shovel", 196, 100, TFQual_Collectors, attribs);
-		SetEntProp(iWep, Prop_Send, "m_iWorldModelIndex", -1);
+		SetEntityRenderMode(iWep, RENDER_TRANSCOLOR);
+		SetEntityRenderColor(iWep, _, _, _, 0);
 		return iWep;
 	}
 	
@@ -128,6 +129,11 @@ methodmap CSeeldier < CBaseBoss
 	{
 		EmitSoundToAll(SEELDIER_SEE_SND, this.Index, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
 		return Plugin_Continue;
+	}
+	
+	public void GetName(char[] sName, int length)
+	{
+		strcopy(sName, length, "Seeldier");
 	}
 	
 	public void GetModel(char[] sModel, int length)

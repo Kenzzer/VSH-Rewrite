@@ -116,7 +116,15 @@ methodmap CSaxtonHale < CBaseBoss
 	{
 		char attribs[128];
 		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 3.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65 ; 214 ; %d", GetRandomInt(9999, 99999));
-		return CreateWeapon(this.Index, "tf_weapon_shovel", 6, 100, TFQual_Strange, attribs);
+		int iWep = CreateWeapon(this.Index, "tf_weapon_shovel", 6, 100, TFQual_Strange, attribs);
+		SetEntityRenderMode(iWep, RENDER_TRANSCOLOR);
+		SetEntityRenderColor(iWep, _, _, _, 0);
+		return iWep;
+	}
+	
+	public void GetName(char[] sName, int length)
+	{
+		strcopy(sName, length, "Saxton Hale");
 	}
 	
 	public void GetModel(char[] sModel, int length)

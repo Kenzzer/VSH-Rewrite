@@ -3,14 +3,14 @@ static int g_iMaxCharge[TF_MAXPLAYERS+1];
 static int g_iChargeBuild[TF_MAXPLAYERS+1];
 static int g_iMaxRevival[TF_MAXPLAYERS+1];
 static int g_iHealthPerRevival[TF_MAXPLAYERS+1];
-static float g_flRessurectHUD_Xpos[TF_MAXPLAYERS+1];
-static float g_flRessurectHUD_Ypos[TF_MAXPLAYERS+1];
+static float g_flResurrectHUD_Xpos[TF_MAXPLAYERS+1];
+static float g_flResurrectHUD_Ypos[TF_MAXPLAYERS+1];
 static float g_flCooldown[TF_MAXPLAYERS+1];
 static float g_flCooldownWait[TF_MAXPLAYERS+1];
 static bool g_bClientHoldingChargeButton[TF_MAXPLAYERS+1];
-static Handle g_hRessurectHUD;
+static Handle g_hResurrectHUD;
 
-methodmap CRessurect < IAbility
+methodmap CResurrect < IAbility
 {
 	property int iMaxCharge
 	{
@@ -78,11 +78,11 @@ methodmap CRessurect < IAbility
 	{
 		public get()
 		{
-			return g_flRessurectHUD_Xpos[this.Client];
+			return g_flResurrectHUD_Xpos[this.Client];
 		}
 		public set(float val)
 		{
-			g_flRessurectHUD_Xpos[this.Client] = val;
+			g_flResurrectHUD_Xpos[this.Client] = val;
 		}
 	}
 	
@@ -90,11 +90,11 @@ methodmap CRessurect < IAbility
 	{
 		public get()
 		{
-			return g_flRessurectHUD_Ypos[this.Client];
+			return g_flResurrectHUD_Ypos[this.Client];
 		}
 		public set(float val)
 		{
-			g_flRessurectHUD_Ypos[this.Client] = val;
+			g_flResurrectHUD_Ypos[this.Client] = val;
 		}
 	}
 	
@@ -118,19 +118,21 @@ methodmap CRessurect < IAbility
 		}
 		public set(float val)
 		{
+			if (val != 0.0)
+				val += GetGameTime();
 			g_flCooldownWait[this.Client] = val;
 		}
 	}
 	
-	public CRessurect(IAbility ability)
+	public CResurrect(IAbility ability)
 	{
 		g_iCharge[ability.Client] = 0;
 		
-		if (g_hRessurectHUD == null)
-			g_hRessurectHUD = CreateHudSynchronizer();
+		if (g_hResurrectHUD == null)
+			g_hResurrectHUD = CreateHudSynchronizer();
 		
 		//Default values, these can be changed if needed
-		CRessurect ressurectAbility = view_as<CRessurect>(ability);
+		CResurrect ressurectAbility = view_as<CResurrect>(ability);
 		ressurectAbility.iMaxCharge = 200;
 		ressurectAbility.iChargeBuild = 4;
 		ressurectAbility.HUD_X = -1.0;
@@ -145,15 +147,15 @@ methodmap CRessurect < IAbility
 	{
 		SetHudTextParams(this.HUD_X, this.HUD_Y, 0.15, 255, 255, 255, 255);
 		if (this.iCharge > 0)
-			ShowSyncHudText(this.Client, g_hRessurectHUD, "Ressurect charge: %0.2f%%. Look up and stand up to use resurrection.", (float(this.iCharge)/float(this.iMaxCharge))*100.0);
+			ShowSyncHudText(this.Client, g_hResurrectHUD, "Resurrect charge: %0.2f%%. Look up and stand up to use resurrection.", (float(this.iCharge)/float(this.iMaxCharge))*100.0);
 		else
-			ShowSyncHudText(this.Client, g_hRessurectHUD, "Hold right click or crouch to resurrect players!");
+			ShowSyncHudText(this.Client, g_hResurrectHUD, "Hold right click or crouch to resurrect players!");
 		
 		if (this.flCooldownWait != 0.0 && this.flCooldownWait > GetGameTime())
 		{
 			float flRemainingTime = this.flCooldownWait-GetGameTime();
 			int iSec = RoundToNearest(flRemainingTime);
-			ShowSyncHudText(this.Client, g_hRessurectHUD, "Ressurect cooldown %i second%s remaining!", iSec, (iSec > 1) ? "s" : "");
+			ShowSyncHudText(this.Client, g_hResurrectHUD, "Resurrect cooldown %i second%s remaining!", iSec, (iSec > 1) ? "s" : "");
 			return;
 		}
 		
@@ -227,6 +229,7 @@ methodmap CRessurect < IAbility
 				
 				// Allow them to join the boss team
 				Client_AddFlag(iPlayer, VSH_ALLOWED_TO_SPAWN_BOSS_TEAM);
+				Client_AddFlag(iPlayer, VSH_ZOMBIE);
 				// Move them to the boss team
 				TF2_ForceTeamJoin(iPlayer, iBossTeam);
 				TF2_RespawnPlayer(iPlayer);
@@ -242,7 +245,7 @@ methodmap CRessurect < IAbility
 			
 			// Free the array
 			delete aDeadPlayers;
-			this.flCooldownWait = this.flCooldown;
+			this.flCooldownWait = this.flCooldown*(iTotalRevived/this.iMaxRevival);
 			
 			// Play ability sound
 			char sSound[PLATFORM_MAX_PATH];

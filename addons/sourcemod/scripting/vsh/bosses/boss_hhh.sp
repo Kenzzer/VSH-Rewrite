@@ -74,6 +74,11 @@ methodmap CHHH < CBaseBoss
 		return iWep;
 	}
 	
+	public void GetName(char[] sName, int length)
+	{
+		strcopy(sName, length, "Headless Horseless Horseman");
+	}
+	
 	public void GetModel(char[] sModel, int length)
 	{
 		strcopy(sModel, length, HHH_MODEL);

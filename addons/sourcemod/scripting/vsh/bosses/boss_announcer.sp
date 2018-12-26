@@ -48,7 +48,7 @@ methodmap CAnnouncer < CBaseBoss
 {
 	public CAnnouncer(CBaseBoss boss)
 	{
-		boss.RegisterAbility("CRessurect");
+		boss.RegisterAbility("CResurrect");
 		boss.iMaxRageDamage = 2200;
 	}
 	
@@ -74,12 +74,17 @@ methodmap CAnnouncer < CBaseBoss
 		return CreateWeapon(this.Index, "tf_weapon_knife", 4, 100, TFQual_Collectors, attribs);
 	}
 	
+	public void GetName(char[] sName, int length)
+	{
+		strcopy(sName, length, "Administrator");
+	}
+	
 	public void GetModel(char[] sModel, int length)
 	{
 		strcopy(sModel, length, ADMIN_MODEL);
 	}
 	
-	public void GetRoundStartMusic(char [] sSound, int length)
+	public void GetRoundStartMusic(char[] sSound, int length)
 	{
 		strcopy(sSound, length, ADMIN_INTRO);
 	}
@@ -106,7 +111,7 @@ methodmap CAnnouncer < CBaseBoss
 	
 	public void GetAbilitySound(char[] sSound, int length, char[] sType)
 	{
-		if (strcmp(sType, "CRessurect") == 0)
+		if (strcmp(sType, "CResurrect") == 0)
 			strcopy(sSound, length, g_strAdminSummon[GetRandomInt(0,sizeof(g_strAdminSummon)-1)]);
 	}
 	
@@ -122,7 +127,7 @@ methodmap CAnnouncer < CBaseBoss
 	
 	public Action OnSoundPlayed(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 	{
-		if (strncmp(sample, "vo/", 3) == 0)
+		if (strncmp(sample, "vo/", 3) == 0 && strncmp(sample, "vo/annou", 8) != 0)
 			return Plugin_Handled;
 		return Plugin_Continue;
 	}
@@ -131,7 +136,7 @@ methodmap CAnnouncer < CBaseBoss
 	{
 		strcopy(sSound, length, ADMIN_THEME);
 		time = 67.0;
-		delay = 7.7;
+		delay = 7.65;
 	}
 	
 	public Action OnTakeDamage(int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)

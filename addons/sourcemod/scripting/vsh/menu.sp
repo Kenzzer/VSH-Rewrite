@@ -80,7 +80,7 @@ void Menus_Setup()
 	StrCat(buffer, sizeof(buffer), "42\n");
 	StrCat(buffer, sizeof(buffer), "Robotnik\n");
 	StrCat(buffer, sizeof(buffer), "FrostyScales\n");
-	StrCat(buffer, sizeof(buffer), "Darthmule\n \n");
+	StrCat(buffer, sizeof(buffer), "Sasch\n \n");
 	
 	SetMenuTitle(g_hMenuCredits3, buffer);
 	AddMenuItem(g_hMenuCredits3, "0", "Back");

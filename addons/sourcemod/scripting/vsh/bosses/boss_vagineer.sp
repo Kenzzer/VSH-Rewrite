@@ -80,6 +80,11 @@ methodmap CVagineer < CBaseBoss
 		return CreateWeapon(this.Index, "tf_weapon_wrench", 169, 100, TFQual_Collectors, attribs);
 	}
 	
+	public void GetName(char[] sName, int length)
+	{
+		strcopy(sName, length, "Vagineer");
+	}
+	
 	public void GetModel(char[] sModel, int length)
 	{
 		strcopy(sModel, length, VAGINEER_MODEL);

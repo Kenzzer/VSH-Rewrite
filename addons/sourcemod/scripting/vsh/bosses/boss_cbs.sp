@@ -124,17 +124,22 @@ methodmap CCBS < CBaseBoss
 	
 	public int GetHealthPerPlayer()
 	{
-		return 590;
+		return 575;
 	}
 	
 	public TFClassType GetClass()
 	{
-		return TFClass_Spy;
+		return TFClass_Sniper;
 	}
 	
 	public int SpawnWeapon()
 	{
 		return CreateWeapon(this.Index, "tf_weapon_club", g_iCBSClubsIndexes[GetRandomInt(0, sizeof(g_iCBSClubsIndexes)-1)], 100, TFQual_Unusual, "68 ; 2.0 ; 2 ; 3.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.6");
+	}
+	
+	public void GetName(char[] sName, int length)
+	{
+		strcopy(sName, length, "Christian Brutal Sniper");
 	}
 	
 	public void GetModel(char[] sModel, int length)
@@ -180,15 +185,13 @@ methodmap CCBS < CBaseBoss
 	
 	public Action OnSoundPlayed(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 	{
-		if (strncmp(sample, "vo/", 3) == 0)
-			return Plugin_Handled;
 		return Plugin_Continue;
 	}
 	
 	public void GetMusicInfo(char[] sSound, int length, float &time, float &delay)
 	{
 		strcopy(sSound, length, CBS_THEME);
-		time = 67.0;
+		time = 132.0;
 	}
 	
 	public Action OnTakeDamage(int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)

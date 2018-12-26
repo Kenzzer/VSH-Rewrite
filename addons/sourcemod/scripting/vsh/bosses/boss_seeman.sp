@@ -13,7 +13,7 @@ methodmap CSeeMan < CBaseBoss
 		bomb.flBombSpawnDuration = 3.0;
 		bomb.flBombSpawnRadius = 500.0;
 		bomb.flBombRadius = 200.0;
-		bomb.flBombDamage = 50.0;
+		bomb.flBombDamage = 75.0;
 		boss.iMaxRageDamage = 2000;
 		
 		CRageAddCond rageCond = view_as<CRageAddCond>(boss.RegisterAbility("CRageAddCond"));
@@ -88,8 +88,14 @@ methodmap CSeeMan < CBaseBoss
 		char attribs[128];
 		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 1.9 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65");
 		int iWep = CreateWeapon(this.Index, "tf_weapon_bottle", 191, 100, TFQual_Collectors, attribs);
-		SetEntProp(iWep, Prop_Send, "m_iWorldModelIndex", -1);
+		SetEntityRenderMode(iWep, RENDER_TRANSCOLOR);
+		SetEntityRenderColor(iWep, _, _, _, 0);
 		return iWep;
+	}
+	
+	public void GetName(char[] sName, int length)
+	{
+		strcopy(sName, length, "Seeman");
 	}
 	
 	public void GetModel(char[] sModel, int length)

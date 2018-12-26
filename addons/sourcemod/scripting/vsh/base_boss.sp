@@ -397,8 +397,12 @@ methodmap CBaseBoss
 	
 	public void Spawn()
 	{
-		//Update our class
+		// Update our class
 		int iPlayer = this.Index;
+		// Save their previous class
+		TFClassType desiredClass = TF2_GetPlayerClass(iPlayer);
+		if (desiredClass == TFClass_Unknown) desiredClass = view_as<TFClassType>(GetRandomInt(view_as<int>(TFClass_Scout), view_as<int>(TFClass_Engineer)));
+		SetEntProp(iPlayer, Prop_Send, "m_iDesiredPlayerClass", desiredClass);
 		TF2_SetPlayerClass(iPlayer, this.GetClass());
 		
 		char sModel[255];
@@ -435,6 +439,17 @@ methodmap CBaseBoss
 		
 		if (this.FindFunction("Spawn"))
 			Call_Finish();
+	}
+	
+	public void GetName(char [] sName, int length)
+	{
+		strcopy(sName, length, "UNDEFINED");
+		if (this.FindFunction("GetName"))
+		{
+			Call_PushStringEx(sName, length, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_PushCell(length);
+			Call_Finish();
+		}
 	}
 	
 	public void GetPainSound(char[] sSound, int length)
@@ -664,7 +679,7 @@ methodmap CBaseBoss
 
 		this.GetRageSound(sSound, sizeof(sSound));
 		if (strcmp(sSound, "") != 0)
-			EmitSoundToAll(sSound, this.Index, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(sSound, this.Index, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT);
 	}
 	
 	public void OnButtonPress(int button)
@@ -778,7 +793,6 @@ methodmap CBaseBoss
 	public Action OnTakeDamage(int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 	{
 		char sSound[255];
-		
 		Action action = Plugin_Continue;
 		if (this.FindFunction("OnTakeDamage"))
 		{
@@ -795,7 +809,7 @@ methodmap CBaseBoss
 		
 		this.GetPainSound(sSound, sizeof(sSound));
 		if (strcmp(sSound, "") != 0)
-			EmitSoundToAll(sSound, this.Index, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+			EmitSoundToAll(sSound, this.Index, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT);
 		
 		if (damagetype & DMG_FALL)
 		{
@@ -857,7 +871,7 @@ methodmap CBaseBoss
 				
 				this.GetBackstabSound(sSound, sizeof(sSound));
 				if (strcmp(sSound, "") != 0)
-					EmitSoundToAll(sSound, this.Index, SNDCHAN_VOICE, SNDLEVEL_SCREAMING);
+					EmitSoundToAll(sSound, this.Index, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT);
 				action = Plugin_Changed;
 			}
 			else if (damagecustom == TF_CUSTOM_TELEFRAG)

@@ -166,7 +166,6 @@ public void Client_OnThink(int iClient)
 			if (TF2_IsUbercharged(iClient))
 				iSkin += 2;
 			
-			SetEntProp(iClient, Prop_Send, "m_bForcedSkin", true);
 			SetEntProp(iClient, Prop_Send, "m_nForcedSkin", iSkin);
 		}
 		
@@ -846,6 +845,8 @@ void Client_ApplyEffects(int iClient)
 	if (strcmp(weaponPrimaryClass, "tf_weapon_compound_bow") == 0 || strcmp(weaponSecondaryClass, "tf_wearable_demoshield") == 0)
 		TF2_AddCondition(iClient, TFCond_CritOnDamage, -1.0);
 	
+	SetEntProp(iClient, Prop_Send, "m_bForcedSkin", false);
+	
 	if (Client_HasFlag(iClient, VSH_ZOMBIE))
 	{
 		Handle hItem = configWeapon.PrepareItemHandle("tf_wearable", g_iClassesZombieSoul[view_as<int>(TF2_GetPlayerClass(iClient))], 666, TFQual_Normal);
@@ -855,6 +856,8 @@ void Client_ApplyEffects(int iClient)
 			SetEntProp(iZombie, Prop_Send, "m_bValidatedAttachedEntity", true);
 			SDK_EquipWearable(iClient, iZombie);
 		}
+		
+		SetEntProp(iClient, Prop_Send, "m_bForcedSkin", true);
 	}
 }
 

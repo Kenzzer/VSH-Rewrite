@@ -282,8 +282,6 @@ void SpecialRound_Activate(int iSpecialRound)
 						iSwapTeam = TFTeam_Blue;
 					else
 						iSwapTeam = TFTeam_Red;
-					
-					SetEntityMoveType(iPlayer, MOVETYPE_NONE);
 				}
 				mp_teams_unbalance_limit.IntValue = 1;
 			}
@@ -323,6 +321,7 @@ public void SpecialRound_OnRoundArenaStart()
 				if (IsClientInGame(iClient) && GetClientTeam(iClient) > 1)
 				{
 					g_clientBoss[iClient] = CBaseBoss(iClient, g_strBossesType[GetRandomInt(0, sizeof(g_strBossesType)-1)]);
+					g_clientBoss[iClient].Spawn();
 					SetEntProp(iClient, Prop_Send, "m_bGlowEnabled", true);
 				}
 			}

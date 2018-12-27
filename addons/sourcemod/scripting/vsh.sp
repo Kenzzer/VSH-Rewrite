@@ -800,7 +800,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		AcceptEntityInput(iEntity, "Kill");
 		g_bBlockRagdoll = false;
 	}
-	else if(strncmp(sClassname, "item_healthkit_", 15) == 0 || strncmp(sClassname, "item_ammopack_", 14) == 0 || strcmp(sClassname, "func_regenerate") == 0)
+	else if(strncmp(sClassname, "item_healthkit_", 15) == 0 || strncmp(sClassname, "item_ammopack_", 14) == 0 || strcmp(sClassname, "func_regenerate") == 0 || strcmp(sClassname, "tf_ammo_pack") == 0)
 	{
 		SDKHook(iEntity, SDKHook_Touch, Boss_OnTouch);
 	}

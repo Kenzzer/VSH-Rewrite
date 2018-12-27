@@ -1008,7 +1008,7 @@ public Action Timer_ApplyBossModel(Handle hTimer, CBaseBoss boss)
 		return Plugin_Stop;
 	}
 	
-	//Prevents plugins like model manager to override our model
+	// Prevents plugins like model manager to override our model
 	char sModel[255];
 	boss.GetModel(sModel, sizeof(sModel));
 	SetVariantString(sModel);

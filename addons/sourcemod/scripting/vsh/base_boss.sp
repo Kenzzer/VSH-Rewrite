@@ -424,6 +424,8 @@ methodmap CBaseBoss
 				AcceptEntityInput(iEntity, "Kill");
 		}
 		
+		SetEntProp(iPlayer, Prop_Send, "m_bForcedSkin", false);
+		
 		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 			TF2_RemoveItemInSlot(iPlayer, iSlot);
 		

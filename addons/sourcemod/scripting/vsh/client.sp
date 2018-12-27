@@ -14,7 +14,7 @@ int g_iClassesZombieSoul[] = {
 	5619,		// TF_CLASS_HEAVYWEAPONS,
 	5624,		// TF_CLASS_PYRO,
 	5623,		// TF_CLASS_SPY,
-	5621,		// TF_CLASS_ENGINEER
+	5621		// TF_CLASS_ENGINEER
 };
 
 //	==========================================================
@@ -774,7 +774,7 @@ void Client_OnButtonPress(int client, int button)
 		else if (button == IN_RELOAD)
 		{
 			if (TF2_IsPlayerInCondition(client, TFCond_Dazed)) return;
-			if (config.LookupBool(g_cvMedigunPatientTeleport)) return;
+			if (!config.LookupBool(g_cvMedigunPatientTeleport)) return;
 			
 			int iSecondaryWep = GetPlayerWeaponSlot(client, WeaponSlot_Secondary);
 			char weaponSecondaryClass[32];
@@ -858,6 +858,7 @@ void Client_ApplyEffects(int iClient)
 		}
 		
 		SetEntProp(iClient, Prop_Send, "m_bForcedSkin", true);
+		delete hItem;
 	}
 }
 

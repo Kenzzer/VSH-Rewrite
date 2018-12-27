@@ -421,7 +421,7 @@ public void OnPluginStart()
 	g_cvClimbHealth = CreateConVar("vsh_climb_health", "15", "Amount of health drained when climbing.", _, true, 0.0);
 	g_cvMarkForDeathRageDamageDrain = CreateConVar("vsh_mark_for_death_dmg_drain", "100", "Amount of rage damage to drain upon marking a boss for death.", _, true, 0.0);
 	g_cvMedigunPatientTeleport = CreateConVar("vsh_medigun_patient_teleport", "1", "Defines if a healer can teleport to his patient using the reload key.", _, true, 0.0, true, 1.0);
-	g_cvPatientTeleportStunDuration = CreateConVar("vsh_medigun_patient_teleport_stun_duration", "3.0", "How long the healer should be stunned for teleporting to his patient.", _, true, 0.0);
+	g_cvPatientTeleportStunDuration = CreateConVar("vsh_medigun_patient_teleport_stun_duration", "1.5", "How long the healer should be stunned for teleporting to his patient.", _, true, 0.0);
 	
 	//Collect the convars
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
@@ -835,7 +835,7 @@ public Action Arrow_OnTouch(int iEntity, int iOther)
 void Frame_SoldierConcherorUberBuff(int iUserID)
 {
 	int iClient = GetClientOfUserId(iUserID);
-	if (iClient < 0 || iClient > MaxClients || !IsClientInGame(iClient) || g_clientBoss[iClient].IsValid()) return;
+	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient) || g_clientBoss[iClient].IsValid()) return;
 	
 	bool bRage = !!GetEntProp(iClient, Prop_Send, "m_bRageDraining");
 	if (bRage)
@@ -1198,6 +1198,8 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	if (g_iTotalRoundPlayed <= 0) return;
 	
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
+	if (iClient <= 0 || iClient > MaxClients) return;
+	
 	int iTeam = GetClientTeam(iClient);
 	if (iTeam <= 1) return;
 	
@@ -1223,7 +1225,8 @@ void Frame_VerifyTeam(int userid)
 		// Only zombies are allowed to late spawn.
 		if (!Client_HasFlag(iClient, VSH_ZOMBIE))
 		{
-			SDKHooks_TakeDamage(iClient, 0, iClient, 9999999.0, DMG_BULLET);
+			if (IsPlayerAlive(iClient))
+				SDKHooks_TakeDamage(iClient, 0, iClient, 9999999.0, DMG_BULLET);
 			return; // not a zombie stop right there
 		}
 	}
@@ -1255,6 +1258,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	if (!g_bRoundStarted) return Plugin_Continue;
 
 	int iVictim = GetClientOfUserId(event.GetInt("userid"));
+	if (iVictim <= 0 || iVictim > MaxClients) return Plugin_Continue;
 	
 	int iVictimTeam = GetClientTeam(iVictim);
 	if (iVictimTeam <= 1) return Plugin_Continue;
@@ -1313,7 +1317,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 			// Kill any zombies that are still alive
 			for (int i = 1; i <= MaxClients; i++)
 			{
-				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam)
+				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !g_clientBoss[i].IsValid())
 					SDKHooks_TakeDamage(i, 0, i, 99999999.0, DMG_BULLET);
 			}
 		}
@@ -1375,98 +1379,101 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (g_iTotalRoundPlayed <= 0) return;
 	
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (GetClientTeam(iClient) <= 1) return;
+	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1) return;
 	
-	/*Balance or restrict specific weapons*/
-	int iWeapon = -1;
-	char sAttrib[255];
-	Handle hItem;
-	TFClassType class = TF2_GetPlayerClass(iClient);
-	for (int iSlot = 0; iSlot <= 5; iSlot++)
+	if (!g_clientBoss[iClient].IsValid())
 	{
-		iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
-		
-		if (IsValidEdict(iWeapon))
+		/*Balance or restrict specific weapons*/
+		int iWeapon = -1;
+		char sAttrib[255];
+		Handle hItem;
+		TFClassType class = TF2_GetPlayerClass(iClient);
+		for (int iSlot = 0; iSlot <= 5; iSlot++)
 		{
-			if (!configWeapon.GetWeaponAttributes(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"), sAttrib, sizeof(sAttrib)))
+			iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
+			
+			if (IsValidEdict(iWeapon))
 			{
-				hItem = INVALID_HANDLE;
-				TF2_RemoveItemInSlot(iClient, iSlot);
-				
-				switch (iSlot)
+				if (!configWeapon.GetWeaponAttributes(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"), sAttrib, sizeof(sAttrib)))
 				{
-					case WeaponSlot_Primary:
+					hItem = INVALID_HANDLE;
+					TF2_RemoveItemInSlot(iClient, iSlot);
+					
+					switch (iSlot)
 					{
-						switch (class)
+						case WeaponSlot_Primary:
 						{
-							case TFClass_Scout: hItem = g_hSDKWeaponScattergun;
-							case TFClass_Sniper: hItem = g_hSDKWeaponSniperRifle;
-							case TFClass_Soldier: hItem = g_hSDKWeaponRocketLauncher;
-							case TFClass_DemoMan: hItem = g_hSDKWeaponGrenadeLauncher;
-							case TFClass_Heavy: hItem = g_hSDKWeaponMinigun;
-							case TFClass_Medic: hItem = g_hSDKWeaponSyringeGun;
-							case TFClass_Pyro: hItem = g_hSDKWeaponFlamethrower;
-							case TFClass_Spy: hItem = g_hSDKWeaponRevolver;
-							case TFClass_Engineer: hItem = g_hSDKWeaponShotgunPrimary;
+							switch (class)
+							{
+								case TFClass_Scout: hItem = g_hSDKWeaponScattergun;
+								case TFClass_Sniper: hItem = g_hSDKWeaponSniperRifle;
+								case TFClass_Soldier: hItem = g_hSDKWeaponRocketLauncher;
+								case TFClass_DemoMan: hItem = g_hSDKWeaponGrenadeLauncher;
+								case TFClass_Heavy: hItem = g_hSDKWeaponMinigun;
+								case TFClass_Medic: hItem = g_hSDKWeaponSyringeGun;
+								case TFClass_Pyro: hItem = g_hSDKWeaponFlamethrower;
+								case TFClass_Spy: hItem = g_hSDKWeaponRevolver;
+								case TFClass_Engineer: hItem = g_hSDKWeaponShotgunPrimary;
+							}
 						}
-					}
-					case WeaponSlot_Secondary:
-					{
-						switch (class)
+						case WeaponSlot_Secondary:
 						{
-							case TFClass_Scout: hItem = g_hSDKWeaponPistolScout;
-							case TFClass_Sniper: hItem = g_hSDKWeaponSMG;
-							case TFClass_Soldier: hItem = g_hSDKWeaponShotgunSoldier;
-							case TFClass_DemoMan: hItem = g_hSDKWeaponStickyLauncher;
-							case TFClass_Heavy: hItem = g_hSDKWeaponShotgunHeavy;
-							case TFClass_Medic: hItem = g_hSDKWeaponMedigun;
-							case TFClass_Pyro: hItem = g_hSDKWeaponShotgunPyro;
-							case TFClass_Engineer: hItem = g_hSDKWeaponPistol;
+							switch (class)
+							{
+								case TFClass_Scout: hItem = g_hSDKWeaponPistolScout;
+								case TFClass_Sniper: hItem = g_hSDKWeaponSMG;
+								case TFClass_Soldier: hItem = g_hSDKWeaponShotgunSoldier;
+								case TFClass_DemoMan: hItem = g_hSDKWeaponStickyLauncher;
+								case TFClass_Heavy: hItem = g_hSDKWeaponShotgunHeavy;
+								case TFClass_Medic: hItem = g_hSDKWeaponMedigun;
+								case TFClass_Pyro: hItem = g_hSDKWeaponShotgunPyro;
+								case TFClass_Engineer: hItem = g_hSDKWeaponPistol;
+							}
 						}
-					}
-					case WeaponSlot_Melee:
-					{
-						switch (class)
+						case WeaponSlot_Melee:
 						{
-							case TFClass_Scout: hItem = g_hSDKWeaponBat;
-							case TFClass_Sniper: hItem = g_hSDKWeaponKukri;
-							case TFClass_Soldier: hItem = g_hSDKWeaponShovel;
-							case TFClass_DemoMan: hItem = g_hSDKWeaponBottle;
-							case TFClass_Heavy: hItem = g_hSDKWeaponFists;
-							case TFClass_Medic: hItem = g_hSDKWeaponBonesaw;
-							case TFClass_Pyro: hItem = g_hSDKWeaponFireaxe;
-							case TFClass_Spy: hItem = g_hSDKWeaponKnife;
-							case TFClass_Engineer: hItem = g_hSDKWeaponWrench;
+							switch (class)
+							{
+								case TFClass_Scout: hItem = g_hSDKWeaponBat;
+								case TFClass_Sniper: hItem = g_hSDKWeaponKukri;
+								case TFClass_Soldier: hItem = g_hSDKWeaponShovel;
+								case TFClass_DemoMan: hItem = g_hSDKWeaponBottle;
+								case TFClass_Heavy: hItem = g_hSDKWeaponFists;
+								case TFClass_Medic: hItem = g_hSDKWeaponBonesaw;
+								case TFClass_Pyro: hItem = g_hSDKWeaponFireaxe;
+								case TFClass_Spy: hItem = g_hSDKWeaponKnife;
+								case TFClass_Engineer: hItem = g_hSDKWeaponWrench;
+							}
 						}
-					}
-					case WeaponSlot_InvisWatch:
-					{
-						switch (class)
+						case WeaponSlot_InvisWatch:
 						{
-							case TFClass_Spy: hItem = g_hSDKWeaponInvis;
+							switch (class)
+							{
+								case TFClass_Spy: hItem = g_hSDKWeaponInvis;
+							}
 						}
-					}
-				}	
-				if (hItem != INVALID_HANDLE)
-				{
-					int iNewWeapon = TF2Items_GiveNamedItem(iClient, hItem);
-					if (IsValidEntity(iNewWeapon)) 
+					}	
+					if (hItem != INVALID_HANDLE)
 					{
-						SetEntProp(iNewWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
-						EquipPlayerWeapon(iClient, iNewWeapon);
+						int iNewWeapon = TF2Items_GiveNamedItem(iClient, hItem);
+						if (IsValidEntity(iNewWeapon)) 
+						{
+							SetEntProp(iNewWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+							EquipPlayerWeapon(iClient, iNewWeapon);
+						}
 					}
 				}
-			}
-			else
-			{
-				// Balance the weapon
-				char atts[32][32];
-				int count = ExplodeString(sAttrib, " ; ", atts, 32, 32);
-				if (count > 1)
+				else
 				{
-					for (int i = 0; i < count; i+= 2)
-						TF2Attrib_SetByDefIndex(iWeapon, StringToInt(atts[i]), StringToFloat(atts[i+1]));
-					TF2Attrib_ClearCache(iWeapon);
+					// Balance the weapon
+					char atts[32][32];
+					int count = ExplodeString(sAttrib, " ; ", atts, 32, 32);
+					if (count > 1)
+					{
+						for (int i = 0; i < count; i+= 2)
+							TF2Attrib_SetByDefIndex(iWeapon, StringToInt(atts[i]), StringToFloat(atts[i+1]));
+						TF2Attrib_ClearCache(iWeapon);
+					}
 				}
 			}
 		}
@@ -1484,7 +1491,7 @@ public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadc
 	if (g_iTotalRoundPlayed <= 0) return;
 	
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (GetClientTeam(iClient) <= 1) return;
+	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1) return;
 	
 	int iDamageAmount = event.GetInt("damageamount");
 	
@@ -1541,7 +1548,7 @@ public Action Event_BuffBannerDeployed(Event event, const char[] sName, bool bDo
 	if (g_iTotalRoundPlayed <= 0) return;
 	
 	int iClient = GetClientOfUserId(event.GetInt("buff_owner"));
-	if (GetClientTeam(iClient) <= 1 || g_clientBoss[iClient].IsValid()) return;
+	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1 || g_clientBoss[iClient].IsValid()) return;
 	
 	int iBannerType = event.GetInt("buff_type");
 	switch (iBannerType)
@@ -1636,7 +1643,7 @@ public Action Event_UberDeployed(Event event, const char[] sName, bool bDontBroa
 	if (g_iTotalRoundPlayed <= 0) return;
 	
 	int iClient = GetClientOfUserId(GetEventInt(event, "userid"));
-	if (GetClientTeam(iClient) <= 1 || g_clientBoss[iClient].IsValid()) return;
+	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1 || g_clientBoss[iClient].IsValid()) return;
 	
 	int iSecondaryWep = GetPlayerWeaponSlot(iClient, WeaponSlot_Secondary);
 	if (iSecondaryWep > MaxClients)

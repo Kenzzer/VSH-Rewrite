@@ -124,7 +124,7 @@ methodmap CCBS < CBaseBoss
 	
 	public int GetHealthPerPlayer()
 	{
-		return 575;
+		return 615;
 	}
 	
 	public TFClassType GetClass()

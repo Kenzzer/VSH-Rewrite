@@ -729,7 +729,7 @@ public void OnGameFrame()
 			
 			bool bAlive = IsPlayerAlive(iActiveBoss);
 			bool bDrawArrow = (GetGameTime()-g_flLastArrowDrawTime > 0.05);
-			g_iHealthBarHealth = (IsPlayerAlive(bAlive)) ? GetEntProp(iActiveBoss, Prop_Send, "m_iHealth") : 0;
+			g_iHealthBarHealth = (bAlive) ? GetEntProp(iActiveBoss, Prop_Send, "m_iHealth") : 0;
 			g_iHealthBarMaxHealth = SDK_GetMaxHealth(iActiveBoss);
 			
 			float vecPos[3], vecMaxs[3];

@@ -12,7 +12,7 @@
 //#include <benextension>
 //#include <sendproxy>
 
-#define PLUGIN_VERSION "0.0.4"
+#define PLUGIN_VERSION "0.0.4b"
 
 #define MAX_BUTTONS 26
 
@@ -183,6 +183,7 @@ ConVar tf_stealth_damage_reduction;
 ConVar tf_feign_death_duration;
 ConVar tf_feign_death_speed_duration;
 ConVar tf_arena_preround_time;
+ConVar tf_forced_holiday;
 
 ConVar g_cvDiamondbackCritReward;
 ConVar g_cvSyringueUberReward;
@@ -257,11 +258,11 @@ int g_iPlayerDamage[TF_MAXPLAYERS+1];
 int g_iPlayerAssistDamage[TF_MAXPLAYERS+1];
 bool g_bPlayerTriggerSpecialRound[TF_MAXPLAYERS+1];
 float g_flTeamInvertedMoveControlsTime[4];
-
 enum PlayerPreferences
 {
 	bool:PlayerPreference_RevivalSelect,
 	bool:PlayerPreference_PickAsBoss,
+	bool:PlayerPreference_DisplayBossArrow
 };
 int g_iPlayerPreferences[TF_MAXPLAYERS+1][PlayerPreferences];
 Handle g_hClientSpecialRoundTimer[TF_MAXPLAYERS+1] = {null, ...};
@@ -437,6 +438,7 @@ public void OnPluginStart()
 	tf_feign_death_duration = FindConVar("tf_feign_death_duration");
 	tf_feign_death_speed_duration = FindConVar("tf_feign_death_speed_duration");
 	tf_arena_preround_time = FindConVar("tf_arena_preround_time");
+	tf_forced_holiday = FindConVar("tf_forced_holiday");
 	
 	AddNormalSoundHook(NormalSoundHook);
 	
@@ -448,6 +450,7 @@ public void OnPluginStart()
 	
 	config = new Config();
 	configWeapon = new WeaponConfig();
+	classConfig = new ClassConfig();
 	
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -461,7 +464,7 @@ public void OnPluginStart()
 	}
 	
 	g_hInfoHud = CreateHudSynchronizer();
-	Menus_Setup();
+	Menus_Init();
 }
 
 void SetupClassDefaultWeapons()
@@ -567,6 +570,7 @@ void Plugin_Cvars(bool toggle)
 	static int iTeamsUnbalanceLimit;
 	static int iDroppedWeaponLifetime;
 	static int iDamageDisableSpread;
+	static int iForcedHoliday;
 	
 	static float flScoutHypePepMax;
 	static float flFeignDeathActiveDamageScale;
@@ -599,6 +603,9 @@ void Plugin_Cvars(bool toggle)
 		iDamageDisableSpread = tf_damage_disablespread.IntValue;
 		tf_damage_disablespread.IntValue = 1;
 		
+		iForcedHoliday = tf_forced_holiday.IntValue;
+		tf_forced_holiday.IntValue = 2;
+		
 		flScoutHypePepMax = tf_scout_hype_pep_max.FloatValue;
 		tf_scout_hype_pep_max.FloatValue = 100.0;
 		
@@ -627,6 +634,7 @@ void Plugin_Cvars(bool toggle)
 		mp_teams_unbalance_limit.IntValue = iTeamsUnbalanceLimit;
 		tf_dropped_weapon_lifetime.IntValue = iDroppedWeaponLifetime;
 		tf_damage_disablespread.IntValue = iDamageDisableSpread;
+		tf_forced_holiday.IntValue = iForcedHoliday;
 		
 
 		tf_scout_hype_pep_max.FloatValue = flScoutHypePepMax;
@@ -729,6 +737,14 @@ public void OnGameFrame()
 			
 			bool bAlive = IsPlayerAlive(iActiveBoss);
 			bool bDrawArrow = (GetGameTime()-g_flLastArrowDrawTime > 0.05);
+			
+			// Collect recipitients for the arrow
+			int iTotalCount = 0, iClients[TF_MAXPLAYERS+1];
+			for (int i = 1; i <= MaxClients; i++)
+				if (IsClientInGame(i) && g_iPlayerPreferences[i][PlayerPreference_DisplayBossArrow])
+					iClients[iTotalCount++] = i;
+			
+			
 			g_iHealthBarHealth = (bAlive) ? GetEntProp(iActiveBoss, Prop_Send, "m_iHealth") : 0;
 			g_iHealthBarMaxHealth = SDK_GetMaxHealth(iActiveBoss);
 			
@@ -746,7 +762,7 @@ public void OnGameFrame()
 				GetEntPropVector(iActiveBoss, Prop_Send, "m_vecMaxs", vecMaxs);
 				vecPos[2] += vecMaxs[2]+10.0;
 				
-				VSH_DisplayArrow(vecPos, flDefAng, iColor);
+				VSH_DisplayArrow(vecPos, flDefAng, iColor, false, iClients, iTotalCount);
 			}
 			
 			if (bDrawArrow)
@@ -765,7 +781,7 @@ public void OnGameFrame()
 							GetClientAbsOrigin(iAlly, vecPos);
 							GetEntPropVector(iAlly, Prop_Send, "m_vecMaxs", vecMaxs);
 							vecPos[2] += vecMaxs[2]+10.0;
-							VSH_DisplayArrow(vecPos, flDefAng, iColor);
+							VSH_DisplayArrow(vecPos, flDefAng, iColor, false, iClients, iTotalCount);
 						}
 					}
 					g_iHealthBarMaxHealth += SDK_GetMaxHealth(iActiveBoss);
@@ -815,7 +831,9 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 public void OnEntityDestroyed(int iEntity)
 {
 	if (0 < iEntity < 2049)
+	{
 		Network_ResetEntity(iEntity);
+	}
 }
 
 public Action Arrow_OnTouch(int iEntity, int iOther)
@@ -841,6 +859,7 @@ void Frame_SoldierConcherorUberBuff(int iUserID)
 	if (bRage)
 	{
 		TF2_AddCondition(iClient, TFCond_UberchargedCanteen, 0.1);
+		TF2_AddCondition(iClient, TFCond_CritOnDamage, 0.1);
 		RequestFrame(Frame_SoldierConcherorUberBuff, iUserID);
 	}
 }
@@ -1355,6 +1374,9 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 				EmitSoundToAll(sSound, iAttacker, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT);
 		}
 	}
+	
+	if (Client_HasFlag(iVictim, VSH_ZOMBIE))
+		SetEntProp(iVictim, Prop_Send, "m_bForcedSkin", false);
 	
 	Client_RemoveFlag(iVictim, VSH_ZOMBIE);
 	Client_RemoveFlag(iVictim, VSH_ALLOWED_TO_SPAWN_BOSS_TEAM);
@@ -2616,7 +2638,7 @@ stock int VSH_IsMaker(int iClient)
 	return (strcmp(auth, "[U:1:99409844]") == 0 || CheckCommandAccess(iClient, "vsh_cmd_access", ADMFLAG_ROOT));
 }
 
-stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4])
+stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4], bool bSendToAll = true, int iRecipients[TF_MAXPLAYERS+1] = { 0, ... }, int iTotalCount = 0)
 {
 	float vecRight[3], vecRight2[3], vecLeft[3], vecLeft2[3];
 	
@@ -2645,27 +2667,48 @@ stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4])
 	vecLeft2[2] = vecPos[2] + 70.0;
 	
 	TE_SetupBeamPoints(vecPos, vecRight, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
-	TE_SendToAll();
+	if (bSendToAll)
+		TE_SendToAll();
+	else
+		TE_Send(iRecipients, iTotalCount, 0.0);
 	TE_SetupBeamPoints(vecPos, vecLeft, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
-	TE_SendToAll();
+	if (bSendToAll)
+		TE_SendToAll();
+	else
+		TE_Send(iRecipients, iTotalCount, 0.0);
 	
 	float vecTemp[3];
 	vecTemp = vecRight2;
 	vecTemp[2] = vecRight[2];
 	TE_SetupBeamPoints(vecRight, vecTemp, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
-	TE_SendToAll();
+	if (bSendToAll)
+		TE_SendToAll();
+	else
+		TE_Send(iRecipients, iTotalCount, 0.0);
 	TE_SetupBeamPoints(vecTemp, vecRight2, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
-	TE_SendToAll();
+	if (bSendToAll)
+		TE_SendToAll();
+	else
+		TE_Send(iRecipients, iTotalCount, 0.0);
 	
 	vecTemp = vecLeft2;
 	vecTemp[2] = vecLeft[2];
 	TE_SetupBeamPoints(vecLeft, vecTemp, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
-	TE_SendToAll();
+	if (bSendToAll)
+		TE_SendToAll();
+	else
+		TE_Send(iRecipients, iTotalCount, 0.0);
 	TE_SetupBeamPoints(vecTemp, vecLeft2, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
-	TE_SendToAll();
+	if (bSendToAll)
+		TE_SendToAll();
+	else
+		TE_Send(iRecipients, iTotalCount, 0.0);
 	
 	TE_SetupBeamPoints(vecRight2, vecLeft2, BEAM_MODEL_INDEX, BEAM_MODEL_INDEX, 0, 30, 0.1, 1.0, 1.0, 1, 0.0, iColor, 30);
-	TE_SendToAll();
+	if (bSendToAll)
+		TE_SendToAll();
+	else
+		TE_Send(iRecipients, iTotalCount, 0.0);
 }
 
 stock void BroadcastSoundToTeam(int team, const char[] strSound)

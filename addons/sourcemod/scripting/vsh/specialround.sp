@@ -322,7 +322,7 @@ public void SpecialRound_OnRoundArenaStart()
 				{
 					g_clientBoss[iClient] = CBaseBoss(iClient, g_strBossesType[GetRandomInt(0, sizeof(g_strBossesType)-1)]);
 					g_clientBoss[iClient].Spawn();
-					SetEntProp(iClient, Prop_Send, "m_bGlowEnabled", true);
+					g_clientBoss[iClient].flGlowTime = 99999999.0;
 				}
 			}
 			mp_teams_unbalance_limit.IntValue = 0;

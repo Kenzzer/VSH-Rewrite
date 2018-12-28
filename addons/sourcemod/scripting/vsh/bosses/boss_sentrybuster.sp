@@ -48,7 +48,9 @@ methodmap CSentryBuster < CBaseBoss
 	{
 		char attribs[128];
 		Format(attribs, sizeof(attribs), "330 ; 7.0 ; 252 ; 0.5 ; 329 ; 0.7 ; 402 ; 1.0");
-		return CreateWeapon(this.Index, "tf_weapon_stickbomb", 307, 100, TFQual_Collectors, attribs);
+		int iWep = CreateWeapon(this.Index, "tf_weapon_stickbomb", 307, 100, TFQual_Collectors, attribs);
+		SetEntPropFloat(iWep, Prop_Send, "m_flNextPrimaryAttack", 99999999.0+GetGameTime());
+		return iWep;
 	}
 	
 	public void GetModel(char[] sModel, int length)
@@ -276,7 +278,7 @@ methodmap CSentryBuster < CBaseBoss
 		{
 			int iMelee = GetPlayerWeaponSlot(this.Index, WeaponSlot_Melee);
 			if (iMelee > MaxClients)
-				SetEntPropFloat(iMelee, Prop_Send, "m_flNextPrimaryAttack", 99999999.0);
+				SetEntPropFloat(iMelee, Prop_Send, "m_flNextPrimaryAttack", 99999999.0+GetGameTime());
 			
 			if (g_flBusterTauntTime[this.Index] == 0.0)
 				FakeClientCommand(this.Index, "taunt");

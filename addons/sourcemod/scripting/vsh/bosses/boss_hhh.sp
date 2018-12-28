@@ -52,12 +52,12 @@ methodmap CHHH < CBaseBoss
 	
 	public int GetBaseHealth()
 	{
-		return 1000;
+		return 900;
 	}
 	
 	public int GetHealthPerPlayer()
 	{
-		return 800;
+		return 720;
 	}
 	
 	public TFClassType GetClass()

@@ -849,7 +849,7 @@ void Client_ApplyEffects(int iClient)
 	
 	if (Client_HasFlag(iClient, VSH_ZOMBIE))
 	{
-		Handle hItem = configWeapon.PrepareItemHandle("tf_wearable", g_iClassesZombieSoul[view_as<int>(TF2_GetPlayerClass(iClient))], 666, TFQual_Normal);
+		Handle hItem = configWeapon.PrepareItemHandle("tf_wearable", g_iClassesZombieSoul[view_as<int>(TF2_GetPlayerClass(iClient))], 100, TFQual_Normal);
 		int iZombie = TF2Items_GiveNamedItem(iClient, hItem);
 		if (iZombie > MaxClients)
 		{
@@ -861,6 +861,7 @@ void Client_ApplyEffects(int iClient)
 		delete hItem;
 	}
 }
+	
 
 //	==========================================================
 //	CLIENT TIMERS

@@ -48,6 +48,72 @@ methodmap WeaponConfig < StringMap
 
 WeaponConfig configWeapon = null;
 
+methodmap ClassConfig < StringMap
+{
+	public ClassConfig()
+	{
+		return view_as<ClassConfig>(new StringMap());
+	}
+	public void GetClassName(TFClassType iClass, char[] sBuffer,int sBufferLen)
+	{
+		switch (iClass)
+		{
+			case TFClass_Scout: strcopy(sBuffer, sBufferLen, "scout");
+			case TFClass_Sniper: strcopy(sBuffer, sBufferLen, "sniper");
+			case TFClass_Soldier: strcopy(sBuffer, sBufferLen, "soldier");
+			case TFClass_DemoMan: strcopy(sBuffer, sBufferLen, "demoman");
+			case TFClass_Heavy: strcopy(sBuffer, sBufferLen, "heavyweapons");
+			case TFClass_Medic: strcopy(sBuffer, sBufferLen, "medic");
+			case TFClass_Pyro: strcopy(sBuffer, sBufferLen, "pyro");
+			case TFClass_Spy: strcopy(sBuffer, sBufferLen, "spy");
+			case TFClass_Engineer: strcopy(sBuffer, sBufferLen, "engineer");
+			default: strcopy(sBuffer, sBufferLen, "");
+		}
+	}
+	public bool LoadSection(KeyValues kv, TFClassType class)
+	{
+		char sectionName[64];
+		this.GetClassName(class, sectionName, sizeof(sectionName));
+		
+		// Clear the tips array
+		ArrayList aClassTips = null;
+		if (!this.GetValue(sectionName, aClassTips))
+			aClassTips = new ArrayList(2048);
+		
+		aClassTips.Clear();
+		this.SetValue(sectionName, aClassTips, true);
+		
+		if(kv.JumpToKey(sectionName, false))
+		{
+			if(kv.GotoFirstSubKey(false))
+			{
+				char bufferName[MAXLEN_CONFIG_VALUE];
+				char bufferValue[2048];
+				do
+				{
+					kv.GetSectionName(bufferName, sizeof(bufferName));
+					kv.GetString(NULL_STRING, bufferValue, sizeof(bufferValue), "");
+					if (strcmp(bufferValue, "") != 0)
+						aClassTips.PushString(bufferValue);
+				}
+				while(kv.GotoNextKey(false));
+				kv.GoBack();
+			}
+			kv.GoBack();
+		}
+	}
+	public ArrayList GetClassTips(TFClassType class)
+	{
+		char sectionName[64];
+		this.GetClassName(class, sectionName, sizeof(sectionName));
+		ArrayList aClassTips = null;
+		this.GetValue(sectionName, aClassTips);
+		return aClassTips;
+	}
+}
+
+ClassConfig classConfig;
+
 methodmap Config < StringMap
 {
 	public Config()
@@ -130,6 +196,11 @@ methodmap Config < StringMap
 		this.LoadSection(kv, "cvars");
 		Config tempConfig = view_as<Config>(configWeapon);
 		tempConfig.LoadSection(kv, "weapons");
+		
+		kv.JumpToKey("classes", false);
+		for (int i = 1; i <= 9; i++)
+			classConfig.LoadSection(kv, view_as<TFClassType>(i));
+		kv.GoBack();
 
 		delete kv;
 	}

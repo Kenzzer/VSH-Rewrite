@@ -166,7 +166,7 @@ methodmap CGentleSpy < CBaseBoss
 	
 	public int GetHealthPerPlayer()
 	{
-		return 650;
+		return 590;
 	}
 	
 	public TFClassType GetClass()
@@ -176,7 +176,7 @@ methodmap CGentleSpy < CBaseBoss
 	
 	public int SpawnWeapon()
 	{
-		return CreateWeapon(this.Index, "tf_weapon_knife", 4, 100, TFQual_Unusual, "68 ; 2.0 ; 2 ; 3.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65 ; 159 ; 1.0");
+		return CreateWeapon(this.Index, "tf_weapon_knife", 4, 100, TFQual_Unusual, "68 ; 2.0 ; 2 ; 4.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65 ; 159 ; 1.0");
 	}
 	
 	public void GetName(char[] sName, int length)

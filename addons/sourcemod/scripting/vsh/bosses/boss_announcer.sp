@@ -59,7 +59,7 @@ methodmap CAnnouncer < CBaseBoss
 	
 	public int GetHealthPerPlayer()
 	{
-		return 590;
+		return 600;
 	}
 	
 	public TFClassType GetClass()
@@ -70,7 +70,7 @@ methodmap CAnnouncer < CBaseBoss
 	public int SpawnWeapon()
 	{
 		char attribs[128];
-		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 3.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65");
+		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 4.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65");
 		return CreateWeapon(this.Index, "tf_weapon_knife", 4, 100, TFQual_Collectors, attribs);
 	}
 	

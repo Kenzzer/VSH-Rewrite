@@ -55,12 +55,12 @@ methodmap CVagineer < CBaseBoss
 		boss.RegisterAbility("CBraveJump");
 		CReverseGame reverse = view_as<CReverseGame>(boss.RegisterAbility("CReverseGame"));
 		reverse.flReverseDuration = 10.0;
-		boss.iMaxRageDamage = 2100;
+		boss.iMaxRageDamage = 2300;
 	}
 	
 	public int GetBaseHealth()
 	{
-		return 1000;
+		return 750;
 	}
 	
 	public int GetHealthPerPlayer()

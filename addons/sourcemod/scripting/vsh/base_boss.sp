@@ -331,6 +331,14 @@ methodmap CBaseBoss
 		if (this.FindFunction("Think"))
 			Call_Finish();
 		
+		// Disallow items from overriding our skins
+		int iBossTeam = GetClientTeam(this.Index);
+		int iSkin = iBossTeam;
+		if (!TF2_IsUbercharged(this.Index))
+			iSkin -= 2;
+			
+		SetEntProp(this.Index, Prop_Send, "m_nForcedSkin", iSkin);
+		
 		if (this.flGlowTime != -1.0 && this.flGlowTime >= GetGameTime())
 		{
 			SetEntProp(this.Index, Prop_Send, "m_bGlowEnabled", true);
@@ -341,8 +349,19 @@ methodmap CBaseBoss
 			SetEntProp(this.Index, Prop_Send, "m_bGlowEnabled", false);
 		}
 
-		float flMaxSpeed = this.flSpeed + (this.flSpeed-(this.flSpeed*((1.0-(float(this.iHealth)/float(this.iMaxHealth))*this.flSpeedMult))));
-		SetEntPropFloat(this.Index, Prop_Data, "m_flMaxspeed", flMaxSpeed);
+		float flDesiredSpeed = 0.0;
+		for (int i = 1; i <= MaxClients; i++)
+		{
+			if (i != this.Index && IsClientInGame(i) && GetClientTeam(i) != iBossTeam && IsPlayerAlive(i))
+			{
+				float flSpeed = GetEntPropFloat(i, Prop_Data, "m_flMaxspeed");
+				if (flSpeed > flDesiredSpeed)
+					flDesiredSpeed = flSpeed*1.10;
+			}
+		}
+		if (flDesiredSpeed == 0.0)
+			flDesiredSpeed = 352.0;
+		SetEntPropFloat(this.Index, Prop_Data, "m_flMaxspeed", flDesiredSpeed);
 		
 		if (this.iMaxRageDamage != -1)
 		{
@@ -356,6 +375,11 @@ methodmap CBaseBoss
 			{
 				iColor[1] = RoundToNearest(255.0*(1.0-(float(this.iRageDamage-(this.iMaxRageDamage/2))/(float(this.iMaxRageDamage)/2.0))));
 				iColor[0] = 255-RoundToNearest(((255.0-float(iColor[1]))/55.0)*20.0);
+			}
+			else if (this.iRageDamage > this.iMaxRageDamage)
+			{
+				iColor[1] = 0;
+				iColor[0] = 255;
 			}
 			else
 			{
@@ -424,7 +448,7 @@ methodmap CBaseBoss
 				AcceptEntityInput(iEntity, "Kill");
 		}
 		
-		SetEntProp(iPlayer, Prop_Send, "m_bForcedSkin", false);
+		SetEntProp(iPlayer, Prop_Send, "m_bForcedSkin", true);
 		
 		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 			TF2_RemoveItemInSlot(iPlayer, iSlot);
@@ -966,6 +990,8 @@ methodmap CBaseBoss
 		SetVariantString("");
 		AcceptEntityInput(this.Index, "SetCustomModel");
 		TF2_RegeneratePlayer(this.Index);
+		
+		SetEntProp(this.Index, Prop_Send, "m_bForcedSkin", false);
 		
 		g_bClientBossActive[this.Index] = false;
 		TF2_AddCondition(this.Index, TFCond_SpeedBuffAlly, 0.01);

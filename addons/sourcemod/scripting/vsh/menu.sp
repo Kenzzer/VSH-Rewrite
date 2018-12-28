@@ -4,11 +4,13 @@ Handle g_hMenuCredits2;
 Handle g_hMenuCredits3;
 Handle g_hMenuSettings;
 Handle g_hMenuHelp;
+Handle g_hMenuClassHelp;
 
 Handle g_hBossSelect;
+Handle g_hBossArrow;
 Handle g_hRevivalSelect;
 
-void Menus_Setup()
+void Menus_Init()
 {
 	char buffer[512];
 	
@@ -16,18 +18,28 @@ void Menus_Setup()
 	// To-do add translations support.
 	g_hMenuMain = CreateMenu(Menu_Main);
 	SetMenuTitle(g_hMenuMain, "[VSH REWRITE] - %s\n \n",PLUGIN_VERSION);
-	Format(buffer, sizeof(buffer), "Help Menu (!vshhelp)");
-	AddMenuItem(g_hMenuMain, "0", buffer);
-	Format(buffer, sizeof(buffer), "Queue List (!vshnext)");
-	AddMenuItem(g_hMenuMain, "0", buffer);
-	Format(buffer, sizeof(buffer), "Settings (!vshsettings)");
-	AddMenuItem(g_hMenuMain, "0", buffer);
-	strcopy(buffer, sizeof(buffer), "Credits (!vshcredits)");
-	AddMenuItem(g_hMenuMain, "0", buffer);
+	AddMenuItem(g_hMenuMain, "0", "Help Menu (!vshhelp)");
+	AddMenuItem(g_hMenuMain, "0", "Queue List (!vshnext)");
+	AddMenuItem(g_hMenuMain, "0", "Settings (!vshsettings)");
+	AddMenuItem(g_hMenuMain, "0", "Credits (!vshcredits)");
 	
+	g_hMenuHelp = CreateMenu(Menu_Help);
+	SetMenuTitle(g_hMenuHelp, "Help \n \n");
+	AddMenuItem(g_hMenuHelp, "0", "Class Information");
 	
-	g_hMenuHelp = CreateMenu(MenuPanel_HandlerNothing);
-	SetMenuExitBackButton(g_hMenuHelp, true);
+	g_hMenuClassHelp = CreateMenu(Menu_ClassHelp);
+	Format(buffer, sizeof(buffer), "Class Information\n \n");
+	SetMenuTitle(g_hMenuClassHelp, buffer);
+	
+	AddMenuItem(g_hMenuClassHelp, "0", "Scout");
+	AddMenuItem(g_hMenuClassHelp, "0", "Sniper");
+	AddMenuItem(g_hMenuClassHelp, "0", "Soldier");
+	AddMenuItem(g_hMenuClassHelp, "0", "Demoman");
+	AddMenuItem(g_hMenuClassHelp, "0", "Medic");
+	AddMenuItem(g_hMenuClassHelp, "0", "Heavy");
+	AddMenuItem(g_hMenuClassHelp, "0", "Pyro");
+	AddMenuItem(g_hMenuClassHelp, "0", "Spy");
+	AddMenuItem(g_hMenuClassHelp, "0", "Engineer");
 	
 	g_hMenuCredits = CreateMenu(Menu_Credits);
 	
@@ -87,24 +99,24 @@ void Menus_Setup()
 	
 	g_hMenuSettings = CreateMenu(Menu_Settings);
 	SetMenuTitle(g_hMenuSettings, "Settings \n \n");
-	Format(buffer, sizeof(buffer), "Toggle Boss Selection");
-	AddMenuItem(g_hMenuSettings, "0", buffer);
-	strcopy(buffer, sizeof(buffer), "Revival Preference");
-	AddMenuItem(g_hMenuSettings, "0", buffer);
+	AddMenuItem(g_hMenuSettings, "0", "Boss Selection");
+	AddMenuItem(g_hMenuSettings, "0", "Boss Arrow");
+	AddMenuItem(g_hMenuSettings, "0", "Revival Preference");
 	
 	g_hBossSelect = CreateMenu(Menu_Toggle);
 	SetMenuTitle(g_hBossSelect, "Toggle boss selection \n \n");
-	Format(buffer, sizeof(buffer), "Disable");
-	AddMenuItem(g_hBossSelect, "0", buffer);
-	strcopy(buffer, sizeof(buffer), "Enable");
-	AddMenuItem(g_hBossSelect, "1", buffer);
+	AddMenuItem(g_hBossSelect, "0", "Disable");
+	AddMenuItem(g_hBossSelect, "0", "Enable");
 	
 	g_hRevivalSelect = CreateMenu(Menu_Toggle);
-	SetMenuTitle(g_hRevivalSelect, "Toggle boss selection \n \n");
-	Format(buffer, sizeof(buffer), "Disable");
-	AddMenuItem(g_hRevivalSelect, "0", buffer);
-	strcopy(buffer, sizeof(buffer), "Enable");
-	AddMenuItem(g_hRevivalSelect, "1", buffer);
+	SetMenuTitle(g_hRevivalSelect, "Toggle being revived as a zombie \n \n");
+	AddMenuItem(g_hRevivalSelect, "0", "Disable");
+	AddMenuItem(g_hRevivalSelect, "0", "Enable");
+	
+	g_hBossArrow = CreateMenu(Menu_Toggle);
+	SetMenuTitle(g_hBossArrow, "Toggle Boss Arrow \n \n");
+	AddMenuItem(g_hBossArrow, "0", "Disable");
+	AddMenuItem(g_hBossArrow, "0", "Enable");
 }
 
 public int Menu_Main(Handle menu, MenuAction action, int param1, int param2)
@@ -113,10 +125,10 @@ public int Menu_Main(Handle menu, MenuAction action, int param1, int param2)
 	{
 		switch (param2)
 		{
-			case 0: DisplayMenu(g_hMenuHelp, param1, 30);
+			case 0: DisplayMenu(g_hMenuHelp, param1, MENU_TIME_FOREVER);
 			case 1: Panel_DisplayQueue(param1);
-			case 3: DisplayMenu(g_hMenuSettings, param1, MENU_TIME_FOREVER);
-			case 4: DisplayMenu(g_hMenuCredits, param1, MENU_TIME_FOREVER);
+			case 2: DisplayMenu(g_hMenuSettings, param1, MENU_TIME_FOREVER);
+			case 3: DisplayMenu(g_hMenuCredits, param1, MENU_TIME_FOREVER);
 		}
 	}
 }
@@ -127,8 +139,10 @@ public int Menu_Settings(Handle menu, MenuAction action, int param1, int param2)
 	{
 		switch (param2)
 		{
-			case 0: DisplayMenu(g_hBossSelect, param1, 30);
-			case 1: DisplayMenu(g_hRevivalSelect, param1, 30);
+			case 0: DisplayMenu(g_hBossSelect, param1, MENU_TIME_FOREVER);
+			case 2: DisplayMenu(g_hRevivalSelect, param1, MENU_TIME_FOREVER);
+			case 1: DisplayMenu(g_hBossArrow, param1, MENU_TIME_FOREVER);
+			default: DisplayMenu(g_hMenuMain, param1, MENU_TIME_FOREVER);
 		}
 	}
 }
@@ -139,9 +153,19 @@ public int Menu_Toggle(Handle menu, MenuAction action, int param1, int param2)
 	{
 		bool bValue = (param2 == 1);
 		if (g_hBossSelect == menu)
+		{
 			g_iPlayerPreferences[param1][PlayerPreference_PickAsBoss] = bValue;
-		if (g_hRevivalSelect == menu)
+		}
+		else if (g_hRevivalSelect == menu)
+		{
 			g_iPlayerPreferences[param1][PlayerPreference_RevivalSelect] = bValue;
+		}
+		else if (g_hBossArrow == menu)
+		{
+			g_iPlayerPreferences[param1][PlayerPreference_DisplayBossArrow] = bValue;
+		}
+		
+		DisplayMenu(g_hMenuSettings, param1, MENU_TIME_FOREVER);
 	}
 }
 
@@ -152,7 +176,7 @@ public int Menu_Credits(Handle menu, MenuAction action, int param1, int param2)
 		switch (param2)
 		{
 			case 0: DisplayMenu(g_hMenuCredits2, param1, MENU_TIME_FOREVER);
-			case 1: DisplayMenu(g_hMenuMain, param1, 30);
+			case 1: DisplayMenu(g_hMenuMain, param1, MENU_TIME_FOREVER);
 		}
 	}
 }
@@ -244,4 +268,82 @@ void Panel_DisplayQueue(int iClient)
 public int MenuPanel_HandlerNothing(Handle hPanel, MenuAction action, int client, int menu_item)
 {
 	return;
+}
+
+public int Menu_Help(Handle hMenu, MenuAction action, int client, int menu_item)
+{
+	if (action == MenuAction_Select)
+	{
+		switch (menu_item)
+		{
+			case 0: DisplayMenu(g_hMenuClassHelp, client, MENU_TIME_FOREVER);
+			default: DisplayMenu(g_hMenuMain, client, MENU_TIME_FOREVER);
+		}
+	}
+}
+
+public int Menu_ClassHelp(Handle hMenu, MenuAction action, int client, int menu_item)
+{
+	if (action == MenuAction_Select)
+	{
+		switch (menu_item)
+		{
+			case 9: DisplayMenu(g_hMenuHelp, client, MENU_TIME_FOREVER);
+			default: Menu_DisplayClassTips(client, view_as<TFClassType>(menu_item+1));
+		}
+	}
+}
+
+static ArrayList g_aReadArray[TF_MAXPLAYERS+1];
+static int g_iPage[TF_MAXPLAYERS+1];
+
+void Menu_DisplayClassTips(int iClient, TFClassType class)
+{
+	ArrayList aTips = classConfig.GetClassTips(class);
+	if (aTips == null)
+	{
+		DisplayMenu(g_hMenuMain, iClient, MENU_TIME_FOREVER);
+		return;
+	}
+	
+	g_iPage[iClient] = 0;
+	g_aReadArray[iClient] = aTips;
+	Menu_ClassTipDisplay(iClient);
+}
+
+public int Menu_ClassTips(Handle hMenu, MenuAction action, int client, int menu_item)
+{
+	if (action == MenuAction_Select)
+	{
+		switch (menu_item)
+		{
+			case 0: g_iPage[client]--;
+			case 1: g_iPage[client]++;
+		}
+		Menu_ClassTipDisplay(client);
+	}
+	if (action == MenuAction_End)
+		delete hMenu;
+}
+
+void Menu_ClassTipDisplay(int iClient)
+{
+	int iLength = g_aReadArray[iClient].Length;
+	if (g_iPage[iClient] >= iLength || g_iPage[iClient] < 0)
+	{
+		DisplayMenu(g_hMenuClassHelp, iClient, MENU_TIME_FOREVER);
+		return;
+	}
+	
+	char sClassTips[2048];
+	g_aReadArray[iClient].GetString(g_iPage[iClient], sClassTips, sizeof(sClassTips));
+	
+	Handle hClassTips = CreateMenu(Menu_ClassTips);
+	SetMenuTitle(hClassTips, sClassTips);
+	SetMenuExitButton(hClassTips, false);
+	AddMenuItem(hClassTips, "0", "Back");
+	
+	if (g_iPage[iClient] < iLength-1)
+		AddMenuItem(hClassTips, "0", "Next");
+	DisplayMenu(hClassTips, iClient, MENU_TIME_FOREVER);
 }

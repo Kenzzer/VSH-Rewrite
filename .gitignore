@@ -1,4 +1,6 @@
 addons/sourcemod/scripting/*.sp
 !addons/sourcemod/scripting/vsh.sp
 !addons/sourcemod/scripting/vsh
-*smx
+!addons/sourcemod/scripting/include/vsh.inc
+addons/sourcemod/scripting/include/*
+*.smx

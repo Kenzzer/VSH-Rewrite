@@ -12,7 +12,7 @@
 //#include <benextension>
 //#include <sendproxy>
 
-#define PLUGIN_VERSION "0.0.4b"
+#define PLUGIN_VERSION "0.0.4c"
 
 #define MAX_BUTTONS 26
 
@@ -42,6 +42,7 @@
 #define ATTRIB_EXTINGUISH_REVENGE	367
 #define ATTRIB_DAMAGE_VULNERABILITY 412
 #define ATTRIB_AUTO_FIRES_FULL_CLIP 413
+#define ATTRIB_REDUCED_HEALING		740
 
 #define ITEM_YOUR_ETERNAL_REWARD	225
 #define ITEM_KUNAI			356
@@ -66,6 +67,22 @@
 #define FL_EDICT_ALWAYS		(1<<3)	// always transmit this entity
 #define FL_EDICT_DONTSEND	(1<<4)	// don't transmit this entity
 #define FL_EDICT_PVSCHECK	(1<<5)	// always transmit entity, but cull against PVS
+
+#define EF_BONEMERGE			0x001 	// Performs bone merge on client side
+#define	EF_BRIGHTLIGHT 			0x002	// DLIGHT centered at entity origin
+#define	EF_DIMLIGHT 			0x004	// player flashlight
+#define	EF_NOINTERP				0x008	// don't interpolate the next frame
+#define	EF_NOSHADOW				0x010	// Don't cast no shadow
+#define	EF_NODRAW				0x020	// don't draw entity
+#define	EF_NORECEIVESHADOW		0x040	// Don't receive no shadow
+#define	EF_BONEMERGE_FASTCULL	0x080	// For use with EF_BONEMERGE. If this is set, then it places this ent's origin at its
+										// parent and uses the parent's bbox + the max extents of the aiment.
+										// Otherwise, it sets up the parent's bones every frame to figure out where to place
+										// the aiment, which is inefficient because it'll setup the parent's bones even if
+										// the parent is not in the PVS.
+#define	EF_ITEM_BLINK			0x100	// blink an item so that the user notices it.
+#define	EF_PARENT_ANIMATES		0x200	// always assume that the parent entity is animating
+#define	EF_MAX_BITS = 10
 
 #define VSH_TAG				"\x07E19300[\x07E17100VSH REWRITE\x07E19300]\x01"
 #define VSH_TEXT_COLOR		"\x07E19F00"
@@ -322,6 +339,7 @@ Config config;
 #include "vsh/base_boss.sp"
 CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 #include "vsh/client.sp"
+#include "vsh/death_rings.sp"
 
 #include "vsh/abilities/brave_jump.sp"
 #include "vsh/abilities/scare_rage.sp"
@@ -337,7 +355,7 @@ CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 #include "vsh/bosses/boss_vagineer.sp"
 #include "vsh/bosses/boss_sentrybuster.sp"
 #include "vsh/bosses/boss_sentrygun.sp"
-#include "vsh/bosses/boss_demorobot.sp"
+//#include "vsh/bosses/boss_demorobot.sp"
 #include "vsh/bosses/boss_seeman.sp"
 #include "vsh/bosses/boss_seeldier.sp"
 #include "vsh/bosses/boss_hhh.sp"
@@ -558,6 +576,7 @@ public void OnPluginEnd()
 		if (IsClientInGame(i))
 			OnClientDisconnect(i);
 	}
+	VSH_StopBossMusic();
 	Plugin_Cvars(false);
 }
 
@@ -624,7 +643,7 @@ void Plugin_Cvars(bool toggle)
 		flFeignDeathSpeed = tf_feign_death_speed_duration.FloatValue;
 		tf_feign_death_speed_duration.FloatValue = 0.0;
 	}
-	else
+	else if (toggled)
 	{
 		tf_arena_use_queue.BoolValue = bArenaUseQueue;
 		tf_arena_first_blood.BoolValue = bArenaFirstBlood;
@@ -669,7 +688,7 @@ public void OnMapStart()
 	//Check if the map is a VSH map
 	char sMapName[64];
 	GetCurrentMap(sMapName, sizeof(sMapName));
-	if ((StrContains(sMapName, "vsh_", false) != -1) || (StrContains(sMapName, "ff2_", false) != -1))
+	if ((StrContains(sMapName, "vsh_", false) != -1) || (StrContains(sMapName, "ff2_", false) != -1) || (StrContains(sMapName, "arena_", false) != -1))
 	{
 		if (FindEntityByClassname(-1, "tf_logic_arena") == -1)
 		{
@@ -712,6 +731,7 @@ public void OnMapStart()
 		PrecacheSound(BOSS_BACKSTAB_SOUND);
 		PrecacheSound("player/doubledonk.wav");
 		PrepareSound(CP_UNLOCK_SOUND);
+		DeathRings_Precache();
 		
 		BEAM_MODEL_INDEX = PrecacheModel(BEAM_MATERIAL);
 		g_bEnabled = true;
@@ -1078,6 +1098,8 @@ public Action Event_RoundArenaStart(Event event, const char[] sName, bool bDontB
 	}
 	
 	GameRules_SetPropFloat("m_flCapturePointEnableTime", 31536000.0+GetGameTime());
+	DeathRings_Setup(240);
+	
 	g_bRoundStarted = true;
 	g_bFreezeMovements = false;
 }
@@ -1089,6 +1111,8 @@ public Action Event_RoundEnd(Event event, const char[] sName, bool bDontBroadcas
 	g_hTimerBossMusic = null;
 	g_hTimerCPUnlockSound = null;
 	g_bRoundStarted = false;
+	
+	DeathRings_Cleanup();
 	
 	int iWinningTeam = event.GetInt("team");
 	SpecialRound_OnRoundEnd(iWinningTeam);
@@ -1245,7 +1269,10 @@ void Frame_VerifyTeam(int userid)
 		if (!Client_HasFlag(iClient, VSH_ZOMBIE))
 		{
 			if (IsPlayerAlive(iClient))
-				SDKHooks_TakeDamage(iClient, 0, iClient, 9999999.0, DMG_BULLET);
+			{
+				int iTrigger = FindEntityByClassname(-1, "trigger_hurt");
+				SDKHooks_TakeDamage(iClient, iTrigger, iTrigger, 9999999.0, DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE);
+			}
 			return; // not a zombie stop right there
 		}
 	}
@@ -1333,11 +1360,12 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	{
 		if (!Client_HasFlag(iVictim, VSH_ZOMBIE))
 		{
+			int iTrigger = FindEntityByClassname(-1, "trigger_hurt");
 			// Kill any zombies that are still alive
 			for (int i = 1; i <= MaxClients; i++)
 			{
 				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !g_clientBoss[i].IsValid())
-					SDKHooks_TakeDamage(i, 0, i, 99999999.0, DMG_BULLET);
+					SDKHooks_TakeDamage(i, iTrigger, iTrigger, 99999999.0, DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE);
 			}
 		}
 	}
@@ -2709,6 +2737,14 @@ stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4], bool b
 		TE_SendToAll();
 	else
 		TE_Send(iRecipients, iTotalCount, 0.0);
+}
+
+stock void VSH_StopBossMusic()
+{
+	g_hTimerBossMusic = null;
+	for (int i = 1; i <= MaxClients; i++)
+		if (IsClientInGame(i))
+			StopSound(i, SNDCHAN_AUTO, g_sBossMusic);
 }
 
 stock void BroadcastSoundToTeam(int team, const char[] strSound)

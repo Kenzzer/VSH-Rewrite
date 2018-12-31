@@ -621,7 +621,7 @@ methodmap CBaseBoss
 	
 	public void GetEyeHeigth(float vecEyeHeight[3])
 	{
-		TFClassType class = TF2_GetPlayerClass(this.Index);
+		//TFClassType class = TF2_GetPlayerClass(this.Index);
 		//vecEyeHeight = g_TFClassViewVectors[view_as<int>(class)];
 		
 		if (this.FindFunction("GetEyeHeigth"))

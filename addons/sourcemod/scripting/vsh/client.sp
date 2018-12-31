@@ -148,29 +148,36 @@ public void Client_OnThink(int iClient)
 		
 		if (Client_HasFlag(iClient, VSH_ZOMBIE))
 		{
+			// Since a recent tf2 update bleeding no long "works" well Sourcemod doesn't expose the new required parameter
+			// However it's a good indicator to explain why zombies are taking damage
 			if (!TF2_IsPlayerInCondition(iClient, TFCond_Bleeding))
 				TF2_MakeBleed(iClient, iClient, 99999.0);
+			
 			if (g_flClientZombieLastDamage[iClient] == 0.0 || g_flClientZombieLastDamage[iClient] <= GetGameTime()-1.0)
 			{
+				// Zombies lose 4% of their max health every second
 				float flDamage = float(RoundToCeil(SDK_GetMaxHealth(iClient)*0.04));
+				// Clamp dmg to 1 at least
 				if (flDamage < 1.0) flDamage = 1.0;
 				
-				float vecOrigin[3] = {0.0,0.0,0.0};
-				SDKHooks_TakeDamage(iClient, 0, iClient, flDamage, DMG_BULLET, _, vecOrigin);
+				int iTrigger = FindEntityByClassname(-1, "trigger_hurt");
+				SDKHooks_TakeDamage(iClient, iTrigger, iTrigger, flDamage, DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE);
 				g_flClientZombieLastDamage[iClient] = GetGameTime();
 			}
 			
+			// Zombies use their zombies skin
 			int iSkin = iTeam + 2;
 			if (class == TFClass_Spy)
 				iSkin += 18; // Don't ask spy, the spy has his zombie skin there
 			if (TF2_IsUbercharged(iClient))
 				iSkin += 2;
-			
+			// Force the skin
 			SetEntProp(iClient, Prop_Send, "m_nForcedSkin", iSkin);
 		}
 		
 		if (class == TFClass_Spy)
 		{
+			// if the spy isn't disguised as one of their teammate don't display any buff
 			int iDisguiseTeam = GetEntProp(iClient, Prop_Send, "m_nDisguiseTeam");
 			if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised) && iDisguiseTeam != iTeam)
 				return;
@@ -193,7 +200,8 @@ public void Client_OnThink(int iClient)
 		if (iSecondaryWep > MaxClients && strcmp(weaponSecondaryClass, "tf_weapon_medigun") == 0)
 		{
 			int iHealTarget = GetEntPropEnt(iSecondaryWep, Prop_Send, "m_hHealingTarget");
-			if (0 < iHealTarget <= MaxClients && IsClientInGame(iHealTarget) && !g_clientBoss[iHealTarget].IsValid())
+			// Apply Uber & Crit on heal on medic's patient except if they are a boss or a zombie
+			if (0 < iHealTarget <= MaxClients && IsClientInGame(iHealTarget) && !g_clientBoss[iHealTarget].IsValid() && !Client_HasFlag(iHealTarget, VSH_ZOMBIE))
 			{
 				TFClassType healTargetClass = TF2_GetPlayerClass(iHealTarget);
 				
@@ -216,7 +224,7 @@ public void Client_OnThink(int iClient)
 		else if (iActiveWep == iSecondaryWep && (class == TFClass_Engineer || class == TFClass_Scout || class == TFClass_Pyro))
 			TF2_AddCondition(iClient, TFCond_Buffed, 0.1);
 		
-		if (class == TFClass_Engineer)
+		/*if (class == TFClass_Engineer)
 		{
 			static int TELEPORTER_BODYGROUP_ARROW 	= (1 << 1);
 			bool bTeleporterHealed = false;
@@ -282,7 +290,7 @@ public void Client_OnThink(int iClient)
 				}
 			}
 			TF2Attrib_SetByDefIndex(iClient, ATTRIB_SENTRYATTACKSPEED, (bSentryHealed) ? 0.5 : 1.0);
-		}
+		}*/
 		
 		if (g_bRoundStarted)
 		{
@@ -328,7 +336,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 			finalAction = g_clientBoss[victim].OnTakeDamage(attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom);
 		if (0 < attacker <= MaxClients && IsClientInGame(attacker))
 		{
-			if (!g_clientBoss[attacker].IsValid())
+			if (!g_clientBoss[attacker].IsValid()) // Regular players
 			{
 				if (bIsVictimBoss && !g_clientBoss[victim].IsMinion)
 				{
@@ -354,6 +362,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						
 						if (iActiveWepIndex == ITEM_BIG_EARNER)
 						{
+							// Big earner refills the cloak and award a speed boost
 							float flCloakMeter = GetEntPropFloat(attacker, Prop_Send, "m_flCloakMeter");
 							flCloakMeter += config.LookupFloat(g_cvBackstabBigEarnerCloak);
 							if (flCloakMeter > 100.0) flCloakMeter = 100.0;
@@ -365,11 +374,14 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						}
 						else if (iActiveWepIndex == ITEM_KUNAI)
 						{
+							// Kunai heal on backstab
 							int iHeal = config.LookupInt(g_cvBackstabKunaiHeal);
 							Client_AddHealth(attacker, iHeal, iHeal);
 						}
 						else if (iActiveWepIndex == ITEM_YOUR_ETERNAL_REWARD || iActiveWepIndex == ITEM_WANGA_PRICK)
 						{
+							// Eternal Reward & Wanga Prick won't do any damage until the 4th backstab
+							// Upon 4th backstab the boss will receive damage and take a +25% damage vulnerability (effect doesn't stack up)
 							g_iPlayerTotalBackstab[attacker][victim]++;
 							
 							int iTotalBackstab = g_iPlayerTotalBackstab[attacker][victim];
@@ -397,6 +409,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					}
 					else if (damagecustom == TF_CUSTOM_BOOTS_STOMP)
 					{
+						// We wanna cap the stomp dmg to a certain value
 						damage = config.LookupFloat(g_cvBossPlayerStompDmg);
 						finalAction = Plugin_Changed;
 					}
@@ -412,10 +425,10 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 							bool bChargeReleased = view_as<bool>(GetEntProp(iSecondaryWep, Prop_Send, "m_bChargeRelease"));
 							if (flCurrentUber < 1.0 && !bChargeReleased)
 							{
-								//Any hit on the boss with a syringue gun will award ubercharge
+								// Any hit on the boss with a syringue gun will award ubercharge
 								if (strcmp(weaponClass, "tf_weapon_syringegun_medic") == 0)
 									flCurrentUber += config.LookupFloat(g_cvSyringueUberReward);
-								else //For now the medic only has 2 wep, crossbow or syringue gun
+								else // For now the medic only has 2 wep, crossbow or syringue gun
 									flCurrentUber += config.LookupFloat(g_cvCrossBowUberReward);
 									
 								if (flCurrentUber >= 1.0)
@@ -433,11 +446,14 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						float flSniperCharge = GetEntPropFloat(weapon, Prop_Send, "m_flChargedDamage");
 						if (damagecustom == TF_CUSTOM_HEADSHOT)
 						{
+							// Decapitations are added by the game if the player dies, but since bosses can't die from just one headshot a fair balance is to add decapitations for every successful headshots
 							if (iActiveWepIndex == ITEM_BAZARR)
 								SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations") + config.LookupInt(g_cvBazaarDecapBonus));
 							damage *= config.LookupFloat(g_cvSniperHeadshotDamageMult);
 							finalAction = Plugin_Changed;
 						}
+						
+						// Any damage dealt with the sniper riffle will add a glow on the boss
 						float flGlowTime = config.LookupFloat(g_cvSniperGlowTime)*(flSniperCharge/100.0);
 						g_clientBoss[victim].flGlowTime = flGlowTime;
 						
@@ -454,26 +470,28 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					}
 					else if (strcmp(sWeaponClass, "tf_weapon_sword") == 0)
 					{
-						//Disable knockback
+						// Disable knockback
 						damagetype |= DMG_PREVENT_PHYSICS_FORCE;
-						//Update heads
+						// Update heads
 						int iNewHeads = GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1;
 						SetEntProp(attacker, Prop_Send, "m_iDecapitations", iNewHeads);
-						//Update player's health
+						// Update player's health
 						Client_AddHealth(attacker, 15, 15);
-						//Recalculate player's speed
+						// Recalculate player's speed
 						TF2_AddCondition(attacker, TFCond_SpeedBuffAlly, 0.01);
 						
 						finalAction = Plugin_Changed;
 					}
 					else if (strcmp(sWeaponClass, "tf_weapon_katana") == 0)
 					{
+						// Allow them to switch to another weapon since they hit the boss
 						SetEntProp(weapon, Prop_Send, "m_bIsBloody", true);
 						if (GetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy") < 1)
 							SetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy", 1);
+						// Heal on kill with be treated later
 					}
 					
-					if ((damagetype & 0x80) && weapon > MaxClients)//Melee hit
+					if ((damagetype & 0x80) && weapon > MaxClients)// Melee hit
 					{
 						if (g_iPlayerTotalBackstab[attacker][victim] >= 4)
 						{
@@ -515,7 +533,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						if (TF2_WeaponFindAttribute(weapon, ATTRIB_MARK_FOR_DEATH, flVal) && flVal > 0.0)
 							g_clientBoss[victim].iRageDamage -= config.LookupInt(g_cvMarkForDeathRageDamageDrain);
 							
-						if (TF2_WeaponFindAttribute(weapon, ATTRIB_CRIT_LAUGH, flVal) && flVal > 0.0)//Don't allow items using that attribute to crit on bosses
+						if (TF2_WeaponFindAttribute(weapon, ATTRIB_CRIT_LAUGH, flVal) && flVal > 0.0)// Don't allow items using that attribute to crit on bosses
 						{
 							damagetype = 0x80;
 							finalAction = Plugin_Changed;
@@ -524,6 +542,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					
 					if (weapon > MaxClients && strncmp(sWeaponClass, "tf_we", 5) == 0 && TF2_WeaponCanHaveRevengeCrits(weapon))
 					{
+						// Any revenge crit do a lil more damage than regulars crit
 						int iRevengeCrit = GetEntProp(attacker, Prop_Send, "m_iRevengeCrits");
 						if (iRevengeCrit > 0)
 						{
@@ -536,6 +555,8 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					{
 						case ITEM_THIRDDEGREE:
 						{
+							// Any hit with the third degree on the boss will give uber to any medic healing the attacker
+							// First collect all the healers
 							ArrayList aHealer = new ArrayList();
 							for (int i = 1; i <= MaxClients; i++)
 							{
@@ -558,6 +579,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 									}
 								}
 							}
+							// Divide the total amount of uber to award by the number of medic healing
 							int iTotalHealer = aHealer.Length;
 							float flUber = config.LookupFloat(g_cvThirdDegreeUberReward)/float(iTotalHealer);
 							for (int i = 0; i < iTotalHealer; i++)
@@ -604,11 +626,11 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					Client_AddHealth(attacker, iHeal, 0);
 				}
 			}
-			else
+			else // Instead if the attacker is a boss
 			{
 				if (!bIsVictimBoss)
 				{
-					// Drain cloack meter if attacked by a boss
+					// Drain cloack meter
 					if (TF2_IsPlayerInCondition(victim, TFCond_Cloaked))
 					{
 						damagetype &= ~DMG_CRIT;
@@ -618,13 +640,14 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						SetEntPropFloat(victim, Prop_Send, "m_flCloakMeter", GetEntPropFloat(victim, Prop_Send, "m_flCloakMeter") / 10.0);
 						finalAction = Plugin_Changed;
 					}
+					// Never crit on feignted players
 					if (GetEntProp(victim, Prop_Send, "m_bFeignDeathReady"))
 					{
 						damagetype &= ~DMG_CRIT;
 						finalAction = Plugin_Changed;
 					}
 					
-					//Knockback ubered players
+					// Knockback ubered players
 					if (bVictimUbered)
 					{
 						float vecVel[3], vecBossPos[3], vecVictimPos[3];
@@ -637,13 +660,14 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						TeleportEntity(victim, NULL_VECTOR, NULL_VECTOR, vecVel);
 					}
 					
-					//Damage resis is used steak
+					// Damage resis is used steak
 					if (TF2_IsPlayerInCondition(victim, TFCond_CritCola) && TF2_IsPlayerInCondition(victim, TFCond_RestrictToMelee))
 					{
 						damage *= config.LookupFloat(g_cvSteakBuffDamageResis);
 						finalAction = Plugin_Changed;
 					}
 					
+					// Don't do any dmg and destroy the demoman's shield if they have one
 					int iWearable = SDK_GetEquippedWearable(victim, WeaponSlot_Secondary);
 					if (iWearable > MaxClients)
 					{

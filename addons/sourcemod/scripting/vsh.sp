@@ -1021,6 +1021,9 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 		SetEntPropFloat(iObjectiveRessource, Prop_Send, "m_flCustomPositionX", 0.20);
 		SetEntPropFloat(iObjectiveRessource, Prop_Send, "m_flCustomPositionY", -1.0);
 	}
+
+	//Create a trigger_hurt in case it does not exist
+	if (FindEntityByClassname(-1, "trigger_hurt")) CreateEntityByName("trigger_hurt");
 	
 	GameRules_SetPropFloat("m_flCapturePointEnableTime", 31536000.0+GetGameTime());//3 years
 	

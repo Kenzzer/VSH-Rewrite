@@ -625,6 +625,13 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					
 					Client_AddHealth(attacker, iHeal, 0);
 				}
+
+				// zombie'd players (made for announcer summons, but it applies fine in general context here) take capped falling damage
+				if (Client_HasFlag(victim, VSH_ZOMBIE) && victim != attacker && damagetype & DMG_FALL && (attacker <= 0 || attacker > MaxClients) && inflictor == 0)
+				{
+					damage = (damage > 10.0) ? 10.0 : 0.0;
+					finalAction = Plugin_Changed;
+				}
 			}
 			else // Instead if the attacker is a boss
 			{

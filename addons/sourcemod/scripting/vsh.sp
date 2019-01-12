@@ -2668,7 +2668,7 @@ stock int VSH_IsMaker(int iClient)
 {
 	char auth[32];
 	GetClientAuthId(iClient, AuthId_Steam3, auth, sizeof(auth));
-	return (strcmp(auth, "[U:1:99409844]") == 0 || strcmp(auth, "[U:1:81108435]) == 0 || CheckCommandAccess(iClient, "vsh_cmd_access", ADMFLAG_ROOT));
+	return (strcmp(auth, "[U:1:99409844]") == 0 || strcmp(auth, "[U:1:81108435]") == 0 || CheckCommandAccess(iClient, "vsh_cmd_access", ADMFLAG_ROOT));
 }
 
 stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4], bool bSendToAll = true, int iRecipients[TF_MAXPLAYERS+1] = { 0, ... }, int iTotalCount = 0)

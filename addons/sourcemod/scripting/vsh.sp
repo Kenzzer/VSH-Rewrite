@@ -231,6 +231,7 @@ ConVar g_cvClimbHealth;
 ConVar g_cvMarkForDeathRageDamageDrain;
 ConVar g_cvMedigunPatientTeleport;
 ConVar g_cvPatientTeleportStunDuration;
+ConVar g_cvSummonedPlayerFallDamageCap;
 
 // Normal boss goes here
 char g_strBossesType[][] = {
@@ -441,6 +442,7 @@ public void OnPluginStart()
 	g_cvMarkForDeathRageDamageDrain = CreateConVar("vsh_mark_for_death_dmg_drain", "100", "Amount of rage damage to drain upon marking a boss for death.", _, true, 0.0);
 	g_cvMedigunPatientTeleport = CreateConVar("vsh_medigun_patient_teleport", "1", "Defines if a healer can teleport to his patient using the reload key.", _, true, 0.0, true, 1.0);
 	g_cvPatientTeleportStunDuration = CreateConVar("vsh_medigun_patient_teleport_stun_duration", "1.5", "How long the healer should be stunned for teleporting to his patient.", _, true, 0.0);
+	g_cvSummonedPlayerFallDamageCap = CreateConVar("vsh_summoned_player_fall_damage_cap", "10.0", "Fall damage cap for player summoned in any form during the round.", _, true, 0.0);
 	
 	//Collect the convars
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");

@@ -51,8 +51,13 @@ void DeathRings_Cleanup()
 	g_hTimerDeathRings = null;
 	
 	for (int i = 1; i <= MaxClients; i++)
+	{
 		if (IsClientInGame(i))
+		{
 			TF2Attrib_RemoveByDefIndex(i, ATTRIB_REDUCED_HEALING);
+			TF2Attrib_RemoveByDefIndex(i, ATTRIB_HEALTH_FROM_PACKS);
+		}
+	}
 }
 
 public Action Timer_DeployDeathRings(Handle hTimer)
@@ -74,8 +79,13 @@ public Action Timer_DeployDeathRings(Handle hTimer)
 	
 	//Cancel medic healing
 	for (int i = 1; i <= MaxClients; i++)
+	{
 		if (IsClientInGame(i))
+		{
 			TF2Attrib_SetByDefIndex(i, ATTRIB_REDUCED_HEALING, 0.0);
+			TF2Attrib_SetByDefIndex(i, ATTRIB_HEALTH_FROM_PACKS, 0.0);
+		}
+	}
 	
 	vecCircleCenter = vecPos;
 	vecCircleCenter[2] -= 1500;

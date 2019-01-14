@@ -31,6 +31,8 @@
 #define ATTRIB_FASTER_FIRE_RATE		6
 #define ATTRIB_UBER_RATE_BONUS		10
 #define ATTRIB_CRITBOOST_ON_KILL	31
+#define ATTRIB_REDUCED_HEALING		69
+#define ATTRIB_HEALTH_FROM_PACKS	109
 #define ATTRIB_SENTRYKILLED_REVENGE 136
 #define ATTRIB_HEAL_ON_KILL			180
 #define ATTRIB_HEALTH_PACK_ON_KILL  203
@@ -42,7 +44,6 @@
 #define ATTRIB_EXTINGUISH_REVENGE	367
 #define ATTRIB_DAMAGE_VULNERABILITY 412
 #define ATTRIB_AUTO_FIRES_FULL_CLIP 413
-#define ATTRIB_REDUCED_HEALING		740
 
 #define ITEM_YOUR_ETERNAL_REWARD	225
 #define ITEM_KUNAI			356
@@ -231,6 +232,7 @@ ConVar g_cvClimbHealth;
 ConVar g_cvMarkForDeathRageDamageDrain;
 ConVar g_cvMedigunPatientTeleport;
 ConVar g_cvPatientTeleportStunDuration;
+ConVar g_cvSummonedPlayerFallDamageCap;
 
 // Normal boss goes here
 char g_strBossesType[][] = {
@@ -441,6 +443,7 @@ public void OnPluginStart()
 	g_cvMarkForDeathRageDamageDrain = CreateConVar("vsh_mark_for_death_dmg_drain", "100", "Amount of rage damage to drain upon marking a boss for death.", _, true, 0.0);
 	g_cvMedigunPatientTeleport = CreateConVar("vsh_medigun_patient_teleport", "1", "Defines if a healer can teleport to his patient using the reload key.", _, true, 0.0, true, 1.0);
 	g_cvPatientTeleportStunDuration = CreateConVar("vsh_medigun_patient_teleport_stun_duration", "1.5", "How long the healer should be stunned for teleporting to his patient.", _, true, 0.0);
+	g_cvSummonedPlayerFallDamageCap = CreateConVar("vsh_summoned_player_fall_damage_cap", "10.0", "Fall damage cap for player summoned in any form during the round.", _, true, 0.0);
 	
 	//Collect the convars
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
@@ -2666,7 +2669,7 @@ stock int VSH_IsMaker(int iClient)
 {
 	char auth[32];
 	GetClientAuthId(iClient, AuthId_Steam3, auth, sizeof(auth));
-	return (strcmp(auth, "[U:1:99409844]") == 0 || CheckCommandAccess(iClient, "vsh_cmd_access", ADMFLAG_ROOT));
+	return (strcmp(auth, "[U:1:99409844]") == 0 || strcmp(auth, "[U:1:81108435]") == 0 || CheckCommandAccess(iClient, "vsh_cmd_access", ADMFLAG_ROOT));
 }
 
 stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4], bool bSendToAll = true, int iRecipients[TF_MAXPLAYERS+1] = { 0, ... }, int iTotalCount = 0)

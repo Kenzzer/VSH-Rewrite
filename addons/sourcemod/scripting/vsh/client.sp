@@ -215,7 +215,7 @@ public void Client_OnThink(int iClient)
 			}
 		}
 		
-		if (class == TFClass_Spy && iActiveWep == iPrimaryWep)
+		if (class == TFClass_Spy && iActiveWep == iPrimaryWep && !TF2_IsPlayerInCondition(iClient, TFCond_Cloaked) )
 			TF2_AddCondition(iClient, TFCond_Buffed, 0.1);
 		else if(class == TFClass_Medic && iActiveWep == iPrimaryWep)
 			TF2_AddCondition(iClient, TFCond_CritOnDamage, 0.1);
@@ -624,6 +624,14 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					if (iHeal > 20) iHeal = 20;
 					
 					Client_AddHealth(attacker, iHeal, 0);
+				}
+
+				// zombie'd players (made for announcer summons, but it applies fine in general context here) take capped falling damage
+				if (Client_HasFlag(victim, VSH_ZOMBIE) && victim != attacker && damagetype & DMG_FALL && (attacker <= 0 || attacker > MaxClients) && inflictor == 0)
+				{
+					float flMaxDamage = config.LookupFloat(g_cvSummonedPlayerFallDamageCap);
+					damage = (damage > flMaxDamage) ? flMaxDamage : damage;
+					finalAction = Plugin_Changed;
 				}
 			}
 			else // Instead if the attacker is a boss

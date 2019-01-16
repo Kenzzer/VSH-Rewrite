@@ -625,14 +625,6 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					
 					Client_AddHealth(attacker, iHeal, 0);
 				}
-
-				// zombie'd players (made for announcer summons, but it applies fine in general context here) take capped falling damage
-				if (Client_HasFlag(victim, VSH_ZOMBIE) && victim != attacker && damagetype & DMG_FALL && (attacker <= 0 || attacker > MaxClients) && inflictor == 0)
-				{
-					float flMaxDamage = config.LookupFloat(g_cvSummonedPlayerFallDamageCap);
-					damage = (damage > flMaxDamage) ? flMaxDamage : damage;
-					finalAction = Plugin_Changed;
-				}
 			}
 			else // Instead if the attacker is a boss
 			{
@@ -695,6 +687,14 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					}
 				}
 			}
+		}
+
+		// zombie'd players (made for announcer summons, but it applies fine in general context here) take capped falling damage
+		if (Client_HasFlag(victim, VSH_ZOMBIE) && damagetype & DMG_FALL && (attacker <= 0 || attacker > MaxClients) && inflictor == 0)
+		{
+			float flMaxDamage = config.LookupFloat(g_cvSummonedPlayerFallDamageCap);
+			damage = (damage > flMaxDamage) ? flMaxDamage : damage;
+			finalAction = Plugin_Changed;
 		}
 	}
 	return finalAction;

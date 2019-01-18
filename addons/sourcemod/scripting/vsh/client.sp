@@ -328,12 +328,15 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 	char weaponClass[32];
 	if (weapon >= 0) GetEdictClassname(weapon, weaponClass, sizeof(weaponClass));
 
+	// is valid victim
 	if (0 < victim <= MaxClients && IsClientInGame(victim) && GetClientTeam(victim) > 1)
 	{
 		bool bIsVictimBoss = g_clientBoss[victim].IsValid();
 		bool bVictimUbered = TF2_IsUbercharged(victim);
 		if (bIsVictimBoss)
 			finalAction = g_clientBoss[victim].OnTakeDamage(attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom);
+		
+		// is valid attacker
 		if (0 < attacker <= MaxClients && IsClientInGame(attacker))
 		{
 			if (!g_clientBoss[attacker].IsValid()) // Regular players

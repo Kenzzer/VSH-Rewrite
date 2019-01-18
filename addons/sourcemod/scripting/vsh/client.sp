@@ -328,12 +328,15 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 	char weaponClass[32];
 	if (weapon >= 0) GetEdictClassname(weapon, weaponClass, sizeof(weaponClass));
 
+	// is valid victim
 	if (0 < victim <= MaxClients && IsClientInGame(victim) && GetClientTeam(victim) > 1)
 	{
 		bool bIsVictimBoss = g_clientBoss[victim].IsValid();
 		bool bVictimUbered = TF2_IsUbercharged(victim);
 		if (bIsVictimBoss)
 			finalAction = g_clientBoss[victim].OnTakeDamage(attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom);
+		
+		// is valid attacker
 		if (0 < attacker <= MaxClients && IsClientInGame(attacker))
 		{
 			if (!g_clientBoss[attacker].IsValid()) // Regular players
@@ -625,14 +628,6 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					
 					Client_AddHealth(attacker, iHeal, 0);
 				}
-
-				// zombie'd players (made for announcer summons, but it applies fine in general context here) take capped falling damage
-				if (Client_HasFlag(victim, VSH_ZOMBIE) && victim != attacker && damagetype & DMG_FALL && (attacker <= 0 || attacker > MaxClients) && inflictor == 0)
-				{
-					float flMaxDamage = config.LookupFloat(g_cvSummonedPlayerFallDamageCap);
-					damage = (damage > flMaxDamage) ? flMaxDamage : damage;
-					finalAction = Plugin_Changed;
-				}
 			}
 			else // Instead if the attacker is a boss
 			{
@@ -695,6 +690,14 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 					}
 				}
 			}
+		}
+
+		// zombie'd players (made for announcer summons, but it applies fine in general context here) take capped falling damage
+		if (Client_HasFlag(victim, VSH_ZOMBIE) && damagetype & DMG_FALL && (attacker <= 0 || attacker > MaxClients) && inflictor == 0)
+		{
+			float flMaxDamage = config.LookupFloat(g_cvSummonedPlayerFallDamageCap);
+			damage = (damage > flMaxDamage) ? flMaxDamage : damage;
+			finalAction = Plugin_Changed;
 		}
 	}
 	return finalAction;

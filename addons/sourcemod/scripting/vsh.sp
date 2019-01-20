@@ -12,7 +12,7 @@
 //#include <benextension>
 //#include <sendproxy>
 
-#define PLUGIN_VERSION "0.0.4c"
+#define PLUGIN_VERSION "0.0.4d"
 
 #define MAX_BUTTONS 26
 
@@ -237,7 +237,7 @@ ConVar g_cvSummonedPlayerFallDamageCap;
 // Normal boss goes here
 char g_strBossesType[][] = {
 	"CSaxtonHale",
-	//"CPainisCupcake",
+	"CPainisCupcake",
 	"CVagineer",
 	//"CDemoRobot",
 	"CHHH",
@@ -1728,10 +1728,10 @@ public Action Timer_PickBoss(Handle hTimer)
 				g_clientBoss[iClient] = CBaseBoss(iClient, g_sNextBossType);
 				g_sNextBossType = "";
 			}
-			/*else if (GetRandomInt(0,100) <= 5)
+			else if (GetRandomInt(0,100) <= 5)
 			{
 				g_clientBoss[iClient] = CBaseBoss(iClient, g_strMiscBossesType[GetRandomInt(0, sizeof(g_strMiscBossesType)-1)]);
-			}*/
+			}
 			else
 			{
 				g_clientBoss[iClient] = CBaseBoss(iClient, g_strBossesType[GetRandomInt(0, sizeof(g_strBossesType)-1)]);
@@ -2417,6 +2417,11 @@ void SDK_EquipWearable(int client, int iWearable)
 
 public MRESReturn Hook_EntityShouldTransmit(int entity, Handle hReturn, Handle hParams)
 {
+	if (TF2_IsPlayerInCondition(entity, TFCond_Cloaked))
+	{
+		DHookSetReturn(hReturn, FL_EDICT_DONTSEND);
+		return MRES_Supercede;
+	}
 	DHookSetReturn(hReturn, FL_EDICT_ALWAYS);
 	return MRES_Supercede;
 }

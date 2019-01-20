@@ -359,8 +359,8 @@ methodmap CBaseBoss
 					flDesiredSpeed = flSpeed*1.10;
 			}
 		}
-		if (flDesiredSpeed == 0.0)
-			flDesiredSpeed = 352.0;
+		if (flDesiredSpeed < 300.0)
+			flDesiredSpeed = 300.0;
 		SetEntPropFloat(this.Index, Prop_Data, "m_flMaxspeed", flDesiredSpeed);
 		
 		if (this.iMaxRageDamage != -1)

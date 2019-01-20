@@ -105,6 +105,7 @@ void Client_AddHealth(int iClient, int iAdditionalHeal, int iMaxOverHeal=0)
 void Client_PutInServer(int iClient)
 {
 	DHookEntity(g_hHookGetMaxHealth, false, iClient);
+	DHookEntity(g_hHookShouldTransmit, false, iClient);
 	SDKHook(iClient, SDKHook_PreThink, Client_OnThink);
 	SDKHook(iClient, SDKHook_OnTakeDamage, Client_OnTakeDamage);
 	Network_ResetClient(iClient);
@@ -215,7 +216,7 @@ public void Client_OnThink(int iClient)
 			}
 		}
 		
-		if (class == TFClass_Spy && iActiveWep == iPrimaryWep && !TF2_IsPlayerInCondition(iClient, TFCond_Cloaked) )
+		if (class == TFClass_Spy && iActiveWep == iPrimaryWep)
 			TF2_AddCondition(iClient, TFCond_Buffed, 0.1);
 		else if(class == TFClass_Medic && iActiveWep == iPrimaryWep)
 			TF2_AddCondition(iClient, TFCond_CritOnDamage, 0.1);

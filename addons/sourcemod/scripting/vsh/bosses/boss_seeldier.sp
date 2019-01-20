@@ -42,7 +42,6 @@ methodmap CSeeldier < CBaseBoss
 				// Transform them into a boss
 				g_clientBoss[iValidCompanion] = CBaseBoss(iValidCompanion, "CSeeMan");
 				TF2_RespawnPlayer(iValidCompanion);
-				SetEntityMoveType(iValidCompanion, MOVETYPE_NONE);
 			}
 		}
 	}

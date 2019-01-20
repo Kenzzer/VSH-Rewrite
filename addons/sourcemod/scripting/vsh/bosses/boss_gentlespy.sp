@@ -322,7 +322,6 @@ methodmap CGentleSpy < CBaseBoss
 		
 		
 		AddFileToDownloadsTable("models/freak_fortress_2/gentlespy/the_gentlespy_v1.mdl");
-		AddFileToDownloadsTable("models/freak_fortress_2/gentlespy/the_gentlespy_v1.phy");
 		AddFileToDownloadsTable("models/freak_fortress_2/gentlespy/the_gentlespy_v1.sw.vtx");
 		AddFileToDownloadsTable("models/freak_fortress_2/gentlespy/the_gentlespy_v1.vvd");
 		AddFileToDownloadsTable("models/freak_fortress_2/gentlespy/the_gentlespy_v1.dx80.vtx");

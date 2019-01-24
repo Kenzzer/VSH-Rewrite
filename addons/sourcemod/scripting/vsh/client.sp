@@ -105,8 +105,9 @@ void Client_AddHealth(int iClient, int iAdditionalHeal, int iMaxOverHeal=0)
 void Client_PutInServer(int iClient)
 {
 	DHookEntity(g_hHookGetMaxHealth, false, iClient);
-	DHookEntity(g_hHookShouldTransmit, false, iClient);
+	DHookEntity(g_hHookShouldTransmit, true, iClient);
 	SDKHook(iClient, SDKHook_PreThink, Client_OnThink);
+	SDKHook(iClient, SDKHook_SetTransmit, Client_OnTransmit);
 	SDKHook(iClient, SDKHook_OnTakeDamage, Client_OnTakeDamage);
 	Network_ResetClient(iClient);
 	
@@ -133,6 +134,13 @@ public MRESReturn Client_GetMaxHealth(int iClient, Handle hReturn)
 		return MRES_Supercede;
 	}
 	return MRES_Ignored;
+}
+
+public Action Client_OnTransmit(int iClient)
+{
+	if (TF2_IsInvisible(iClient)) // Don't allow the networking of invisible players
+		return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public void Client_OnThink(int iClient)

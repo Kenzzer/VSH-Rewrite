@@ -2417,11 +2417,6 @@ void SDK_EquipWearable(int client, int iWearable)
 
 public MRESReturn Hook_EntityShouldTransmit(int entity, Handle hReturn, Handle hParams)
 {
-	if (TF2_IsPlayerInCondition(entity, TFCond_Cloaked))
-	{
-		DHookSetReturn(hReturn, FL_EDICT_DONTSEND);
-		return MRES_Supercede;
-	}
 	DHookSetReturn(hReturn, FL_EDICT_ALWAYS);
 	return MRES_Supercede;
 }
@@ -2568,6 +2563,15 @@ stock bool TF2_IsUbercharged(int client)
 		TF2_IsPlayerInCondition(client, TFCond_UberchargedHidden) ||
 		TF2_IsPlayerInCondition(client, TFCond_UberchargedOnTakeDamage) ||
 		TF2_IsPlayerInCondition(client, TFCond_UberchargedCanteen));
+}
+
+stock bool TF2_IsInvisible(int client)
+{
+	return ((TF2_IsPlayerInCondition(client, TFCond_Cloaked) ||
+		TF2_IsPlayerInCondition(client, TFCond_DeadRingered) ||
+		TF2_IsPlayerInCondition(client, TFCond_Stealthed))
+		&& !TF2_IsPlayerInCondition(client, TFCond_StealthedUserBuffFade)
+		&& !TF2_IsPlayerInCondition(client, TFCond_CloakFlicker));
 }
 
 stock void TF2_RemoveItemInSlot(int client, int slot)

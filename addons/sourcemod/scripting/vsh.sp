@@ -1271,15 +1271,15 @@ void Frame_VerifyTeam(int userid)
 	if (g_bRoundStarted)
 	{
 		// Round has started, this is a late spawning.
-		// Only zombies are allowed to late spawn.
-		if (!Client_HasFlag(iClient, VSH_ZOMBIE))
+		// Only zombies & minions are allowed to late spawn.
+		if (!Client_HasFlag(iClient, VSH_ZOMBIE) && !(g_clientBoss[iClient] != INVALID_BOSS && g_clientBoss[iClient].IsMinion))
 		{
 			if (IsPlayerAlive(iClient))
 			{
 				int iTrigger = FindEntityByClassname(-1, "trigger_hurt");
 				SDKHooks_TakeDamage(iClient, iTrigger, iTrigger, 9999999.0, DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE);
 			}
-			return; // not a zombie stop right there
+			return; // not a zombie or minion stop right there
 		}
 	}
 	

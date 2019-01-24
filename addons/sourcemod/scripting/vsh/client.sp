@@ -136,8 +136,10 @@ public MRESReturn Client_GetMaxHealth(int iClient, Handle hReturn)
 	return MRES_Ignored;
 }
 
-public Action Client_OnTransmit(int iClient)
+public Action Client_OnTransmit(int iClient, int iOther)
 {
+	if (iOther == iClient) // If it's us keep transmitting 
+		return Plugin_Continue;
 	if (TF2_IsInvisible(iClient)) // Don't allow the networking of invisible players
 		return Plugin_Handled;
 	return Plugin_Continue;

@@ -1337,34 +1337,34 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 				iLastAlive++;
 	}
 	
-	if (0 < iLastAlive <= 4)
+	if (!Client_HasFlag(iVictim, VSH_ZOMBIE) && !(g_clientBoss[iVictim].IsValid() && g_clientBoss[iVictim].IsMinion))
 	{
-		if (ControlPoint_Unlock())
-			PrintHintTextToAll("Only 4 players are alive, unlocking control point...");
-	}	
-	if (2 <= iLastAlive <= 3)
-	{
-		for (int i = 1; i <= MaxClients; i++)
+		if (0 < iLastAlive <= 4)
 		{
-			if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid())
-				TF2_AddCondition(i, TFCond_Buffed, -1.0);
-		}
-	}
-	else if (iLastAlive == 1)
-	{
-		//Find the last one alive and crit them
-		for (int i = 1; i <= MaxClients; i++)
+			if (ControlPoint_Unlock())
+				PrintHintTextToAll("Only 4 players are alive, unlocking control point...");
+		}	
+		if (2 <= iLastAlive <= 3)
 		{
-			if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid())
+			for (int i = 1; i <= MaxClients; i++)
 			{
-				TF2_AddCondition(i, TFCond_CritOnDamage, -1.0);
-				break;
+				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid())
+					TF2_AddCondition(i, TFCond_Buffed, -1.0);
 			}
 		}
-	}
-	else if (iLastAlive == 0)
-	{
-		if (!Client_HasFlag(iVictim, VSH_ZOMBIE))
+		else if (iLastAlive == 1)
+		{
+			//Find the last one alive and crit them
+			for (int i = 1; i <= MaxClients; i++)
+			{
+				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid())
+				{
+					TF2_AddCondition(i, TFCond_CritOnDamage, -1.0);
+					break;
+				}
+			}
+		}
+		else if (iLastAlive == 0)
 		{
 			int iTrigger = FindEntityByClassname(-1, "trigger_hurt");
 			// Kill any zombies that are still alive

@@ -801,7 +801,9 @@ Action Client_OnButton(int client, int button)
 void Client_OnButtonPress(int client, int button)
 {
 	if (g_clientBoss[client].IsValid())
+	{
 		g_clientBoss[client].OnButtonPress(button);
+	}
 	else
 	{
 		if (button == IN_ATTACK)

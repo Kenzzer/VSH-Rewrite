@@ -153,7 +153,9 @@ public Action Timer_DamageTick(Handle hTimer, float flBeginTime)
 				{
 					EmitSoundToClient(i, g_strDeathRingsHitSound[GetRandomInt(0, sizeof(g_strDeathRingsHitSound)-1)]);
 					float vecNoForce[3] = {0.0, 0.0, 0.0};
-					SDKHooks_TakeDamage(i, iTrigger, iTrigger, 0.02*SDK_GetMaxHealth(i), DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE, 0, vecNoForce, vecNoForce);
+					SetEntProp(i, Prop_Send, "m_iHealth", GetEntPropEnt(i, Prop_Send, "m_iHealth")-iDamage); // Forces the damage to go through any sort of damage reduction
+					// Call take damage function even if we're not doing any damage, if the client health is under 0 this will forcefully trigger their death
+					SDKHooks_TakeDamage(i, iTrigger, iTrigger, 0.0, DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE, 0, vecNoForce, vecNoForce);
 				}
 				iRecipients[iTotal++] = i;
 			}

@@ -175,7 +175,7 @@ ArrayList SpecialRound_GetList()
 		if (numPlayers > 10)
 		{
 			list.Push(SPECIALROUND_CLASHOFBOSSES);
-			list.Push(SPECIALROUND_SENTRYBUSTERS);
+			//list.Push(SPECIALROUND_SENTRYBUSTERS);
 		}
 	}
 	

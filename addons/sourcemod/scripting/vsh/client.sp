@@ -502,7 +502,6 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						SetEntProp(weapon, Prop_Send, "m_bIsBloody", true);
 						if (GetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy") < 1)
 							SetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy", 1);
-						// Heal on kill with be treated later
 					}
 					
 					if ((damagetype & 0x80) && weapon > MaxClients)// Melee hit
@@ -546,6 +545,9 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						
 						if (TF2_WeaponFindAttribute(weapon, ATTRIB_MARK_FOR_DEATH, flVal) && flVal > 0.0)
 							g_clientBoss[victim].iRageDamage -= config.LookupInt(g_cvMarkForDeathRageDamageDrain);
+						
+						if (TF2_WeaponFindAttribute(weapon, ATTRIB_REGEN_HEALTH_ON_KILL, flVal) && flVal > 0.0)
+							Client_AddHealth(attacker, RoundToCeil(float(SDK_GetMaxHealth(attacker))*config.LookupFloat(g_cvRegenHealthOnKillPercentage)), 0);
 							
 						if (TF2_WeaponFindAttribute(weapon, ATTRIB_CRIT_LAUGH, flVal) && flVal > 0.0)// Don't allow items using that attribute to crit on bosses
 						{

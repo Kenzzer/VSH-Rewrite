@@ -37,6 +37,7 @@
 #define ATTRIB_HEAL_ON_KILL			180
 #define ATTRIB_HEALTH_PACK_ON_KILL  203
 #define ATTRIB_MARK_FOR_DEATH		218
+#define ATTRIB_REGEN_HEALTH_ON_KILL	220
 #define ATTRIB_BIDERECTIONAL		276
 #define ATTRIB_SAPPER_KILLS_CRIT	296
 #define ATTRIB_SENTRYATTACKSPEED	343
@@ -233,6 +234,7 @@ ConVar g_cvMarkForDeathRageDamageDrain;
 ConVar g_cvMedigunPatientTeleport;
 ConVar g_cvPatientTeleportStunDuration;
 ConVar g_cvSummonedPlayerFallDamageCap;
+ConVar g_cvRegenHealthOnKillPercentage;
 
 // Normal boss goes here
 char g_strBossesType[][] = {
@@ -444,6 +446,7 @@ public void OnPluginStart()
 	g_cvMedigunPatientTeleport = CreateConVar("vsh_medigun_patient_teleport", "1", "Defines if a healer can teleport to his patient using the reload key.", _, true, 0.0, true, 1.0);
 	g_cvPatientTeleportStunDuration = CreateConVar("vsh_medigun_patient_teleport_stun_duration", "1.5", "How long the healer should be stunned for teleporting to his patient.", _, true, 0.0);
 	g_cvSummonedPlayerFallDamageCap = CreateConVar("vsh_summoned_player_fall_damage_cap", "10.0", "Fall damage cap for player summoned in any form during the round.", _, true, 0.0);
+	g_cvRegenHealthOnKillPercentage = CreateConVar("vsh_regen_health_on_kill_percentage", "0.2", "How much of their total health should be regenerated if they hit the boss with a regen health on kill weapon.", _, true, 0.0);
 	
 	//Collect the convars
 	tf_arena_use_queue = FindConVar("tf_arena_use_queue");
@@ -956,7 +959,15 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 		}
 	}
 	// Both team must have at least one player!
-	if (!bRed || !bBlu) return;
+	if (!bRed || !bBlu)
+	{
+		// Attempt something to resolve the issue
+		// Doesn't matter who is force switched as long it resolves the issue within valve's code
+		for (int iClient = 1; iClient <= MaxClients; iClient++)
+			if (IsClientInGame(iClient))
+				ChangeClientTeam(iClient, (!bRed) ? TFTeam_Red : TFTeam_Blue);
+		return;
+	}
 	
 	g_hTimerPickBoss = null;
 	g_hTimerBossMusic = null;
@@ -1728,7 +1739,7 @@ public Action Timer_PickBoss(Handle hTimer)
 				g_clientBoss[iClient] = CBaseBoss(iClient, g_sNextBossType);
 				g_sNextBossType = "";
 			}
-			else if (GetRandomInt(0,100) <= 5)
+			else if (GetRandomInt(0,100) <= 5 && (VSH_GetTeamCount(TFTeam_Red, false, false, false)+VSH_GetTeamCount(TFTeam_Blue, false, false, false)) > 5)
 			{
 				g_clientBoss[iClient] = CBaseBoss(iClient, g_strMiscBossesType[GetRandomInt(0, sizeof(g_strMiscBossesType)-1)]);
 			}

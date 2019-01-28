@@ -2146,6 +2146,16 @@ public Action CTFPlayer_GetClassEyeHeight(int iClient, float vecSetPos[3])
 	return Plugin_Continue;
 }
 
+public void TF2_OnConditionAdded(int iClient, TFCond cond)
+{
+	// do not allow people to move anyway during g_bFreezeMovements
+	if (cond == TFCond_Charging && g_bFreezeMovements)
+	{
+		TF2_RemoveCondition(iClient, TFCond_Charging);
+	}
+}
+	
+
 public void TF2_OnConditionRemoved(int iClient, TFCond cond)
 {
 	if (cond == TFCond_CritCola && !g_clientBoss[iClient].IsValid())

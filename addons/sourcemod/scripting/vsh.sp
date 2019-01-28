@@ -1036,10 +1036,13 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 		SetEntPropFloat(iObjectiveRessource, Prop_Send, "m_flCustomPositionY", -1.0);
 	}
 
-	//Create a trigger_hurt in case it does not exist
+	// Create a trigger_hurt in case it does not exist
 	if (FindEntityByClassname(-1, "trigger_hurt")) CreateEntityByName("trigger_hurt");
 	
 	GameRules_SetPropFloat("m_flCapturePointEnableTime", 31536000.0+GetGameTime());//3 years
+	
+	// We might need to display information on the hud but "Your Team" box hides quite a lot of information so let's fake the round in the running state to trick the client
+	GameRules_SetProp("m_iRoundState", RoundState_RoundRunning);
 	
 	// Special round
 	int iRoundTime = tf_arena_preround_time.IntValue;
@@ -1049,6 +1052,7 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 		iRoundTime += RoundToCeil(SR_CYCLELENGTH);
 		SpecialRound_CycleStart();
 		g_bSpecialRound = false;
+		
 		g_bPlayerTriggerSpecialRound[iPickedPlayer] = false;
 	}
 	float flPickBossTime = float(iRoundTime)-7.0;
@@ -1728,6 +1732,7 @@ public Action Timer_ControlPointUnlockSound(Handle hTimer)
 public Action Timer_PickBoss(Handle hTimer)
 {
 	if (g_hTimerPickBoss != hTimer) return;
+	GameRules_SetProp("m_iRoundState", RoundState_Preround);// Set back the round state to pre round
 	
 	int iClient = GetClientOfUserId(g_iUserActiveBoss);
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))

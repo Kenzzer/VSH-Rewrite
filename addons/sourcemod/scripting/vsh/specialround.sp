@@ -175,7 +175,7 @@ ArrayList SpecialRound_GetList()
 		if (numPlayers > 10)
 		{
 			list.Push(SPECIALROUND_CLASHOFBOSSES);
-			//list.Push(SPECIALROUND_SENTRYBUSTERS);
+			list.Push(SPECIALROUND_SENTRYBUSTERS);
 		}
 	}
 	
@@ -400,6 +400,7 @@ bool SpecialRound_PickBoss(int iClient)
 		case SPECIALROUND_SENTRYBUSTERS:
 		{
 			g_clientBoss[iClient] = CBaseBoss(iClient, "CSentryGun");
+			g_clientBoss[iClient].flGlowTime = 99999999.0;
 			return true;
 		}
 	}

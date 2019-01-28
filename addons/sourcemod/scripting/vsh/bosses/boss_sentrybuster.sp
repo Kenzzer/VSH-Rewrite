@@ -47,7 +47,7 @@ methodmap CSentryBuster < CBaseBoss
 	public int SpawnWeapon()
 	{
 		char attribs[128];
-		Format(attribs, sizeof(attribs), "330 ; 7.0 ; 252 ; 0.5 ; 329 ; 0.7 ; 402 ; 1.0");
+		Format(attribs, sizeof(attribs), "330 ; 7.0 ; 252 ; 0.5 ; 329 ; 0.7 ; 402 ; 1.0 ; 1 ; 1.0");
 		int iWep = CreateWeapon(this.Index, "tf_weapon_stickbomb", 307, 100, TFQual_Collectors, attribs);
 		SetEntPropFloat(iWep, Prop_Send, "m_flNextPrimaryAttack", 99999999.0+GetGameTime());
 		return iWep;
@@ -239,7 +239,7 @@ methodmap CSentryBuster < CBaseBoss
 	
 	public Action OnTakeDamage(int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 	{
-		//Taken from STT
+		// Taken from STT
 		if(g_flBusterTauntTime[this.Index] == 0.0)
 		{
 			if(this.iHealth == 1)
@@ -272,7 +272,7 @@ methodmap CSentryBuster < CBaseBoss
 		return Plugin_Continue;
 	}
 	
-	public void OnButtonHold(int button)
+	public void OnButtonPress(int button)
 	{
 		if (button == IN_ATTACK)
 		{

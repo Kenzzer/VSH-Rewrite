@@ -450,7 +450,7 @@ methodmap CBaseBoss
 		
 		SetEntProp(iPlayer, Prop_Send, "m_bForcedSkin", true);
 		
-		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
+		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 			TF2_RemoveItemInSlot(iPlayer, iSlot);
 		
 		int iWep = this.SpawnWeapon();
@@ -458,6 +458,7 @@ methodmap CBaseBoss
 		{
 			SetEntProp(iWep, Prop_Send, "m_bValidatedAttachedEntity", true);
 			EquipPlayerWeapon(iPlayer, iWep);
+			SetEntPropEnt(iPlayer, Prop_Send, "m_hActiveWeapon", iWep);
 		}
 	
 		this.RecalculateMaxHealth();

@@ -13,6 +13,7 @@ static char g_strDeathRingsHitSound[][] =
 };
 
 static Handle g_hTimerDeathRings = null;
+static int g_iPlayerHealth[TF_MAXPLAYERS+1];
 
 void DeathRings_Precache()
 {
@@ -122,6 +123,18 @@ public Action Timer_RingsBeginShrink(Handle hTimer)
 		TE_SendToAll();
 	}
 	
+	// Save everyone's health prior the ring event
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i))
+		{
+			g_iPlayerHealth[i] = GetEntProp(i, Prop_Send, "m_iHealth");
+			int iMaxHealth = SDK_GetMaxHealth(i);
+			if (g_iPlayerHealth[i] > iMaxHealth)
+				g_iPlayerHealth[i] = iMaxHealth;
+		}
+	}
+	
 	g_hTimerDeathRings = CreateTimer(0.1, Timer_DamageTick, GetGameTime());
 }
 
@@ -147,19 +160,27 @@ public Action Timer_DamageTick(Handle hTimer, float flBeginTime)
 			GetClientAbsOrigin(i, vecTargetPos);
 			vecTargetPos[2] = vecDeathPos[2];
 			
+			int iCurrentHealth = GetEntProp(i, Prop_Send, "m_iHealth");
+			if (iCurrentHealth < g_iPlayerHealth[i])
+				g_iPlayerHealth[i] = iCurrentHealth; // Health can only go down not up!
+			
 			if (GetVectorDistance(vecTargetPos, vecDeathPos, false) >= flDeathRadius/2)
 			{
 				if (IsPlayerAlive(i))
 				{
 					EmitSoundToClient(i, g_strDeathRingsHitSound[GetRandomInt(0, sizeof(g_strDeathRingsHitSound)-1)]);
 					float vecNoForce[3] = {0.0, 0.0, 0.0};
-					int iDamage = RoundToCeil(0.02*SDK_GetMaxHealth(i));
-					SetEntProp(i, Prop_Send, "m_iHealth", GetEntPropEnt(i, Prop_Send, "m_iHealth")-iDamage); // Forces the damage to go through any sort of damage reduction
-					// Call take damage function even if we're not doing any damage, if the client health is under 0 this will forcefully trigger their death
-					SDKHooks_TakeDamage(i, iTrigger, iTrigger, 0.00, DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE, 0, vecNoForce, vecNoForce);
+					int iDamage = RoundToNearest(0.02*float(SDK_GetMaxHealth(i)));
+					if (iDamage <= 2) iDamage = 2;
+					
+					g_iPlayerHealth[i] -= iDamage;
+					if (g_iPlayerHealth[i] <= 0)
+						SDKHooks_TakeDamage(i, iTrigger, iTrigger, 99999.0, DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE, 0, vecNoForce, vecNoForce);
 				}
 				iRecipients[iTotal++] = i;
 			}
+			
+			SetEntProp(i, Prop_Send, "m_iHealth", g_iPlayerHealth[i]);
 		}
 	}
 	

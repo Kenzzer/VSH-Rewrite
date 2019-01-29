@@ -1330,6 +1330,8 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	int iVictimTeam = GetClientTeam(iVictim);
 	if (iVictimTeam <= 1) return Plugin_Continue;
 	
+	bool bDeadRingered = ((GetEventInt(hEvent, "death_flags") & TF_DEATHFLAG_DEADRINGER) != 0);
+	
 	TFClassType desiredClass = view_as<TFClassType>(GetEntProp(iVictim, Prop_Send, "m_iDesiredPlayerClass"));
 	if (desiredClass != TFClass_Unknown)
 		TF2_SetPlayerClass(iVictim, desiredClass);
@@ -1352,7 +1354,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 				iLastAlive++;
 	}
 	
-	if (!Client_HasFlag(iVictim, VSH_ZOMBIE) && !(g_clientBoss[iVictim].IsValid() && g_clientBoss[iVictim].IsMinion))
+	if (!Client_HasFlag(iVictim, VSH_ZOMBIE) && !(g_clientBoss[iVictim].IsValid() && g_clientBoss[iVictim].IsMinion) && !bDeadRingered)
 	{
 		if (0 < iLastAlive <= 4)
 		{

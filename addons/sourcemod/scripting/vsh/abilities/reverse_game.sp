@@ -23,21 +23,21 @@ methodmap CReverseGame < IAbility
 	public void OnRage(bool bSuperRage)
 	{
 		int iTeam = GetClientTeam(this.Client);
-		int iEnnemyTeam;
+		int iEnemyTeam;
 		if (iTeam == TFTeam_Red)
-			iEnnemyTeam = TFTeam_Blue;
+			iEnemyTeam = TFTeam_Blue;
 		else
-			iEnnemyTeam = TFTeam_Red;
+			iEnemyTeam = TFTeam_Red;
 		
 		float duration = this.flReverseDuration;
 		if (bSuperRage)
 			duration *= 2.0;
-		g_flTeamInvertedMoveControlsTime[iEnnemyTeam] = GetGameTime()+duration;
+		g_flTeamInvertedMoveControlsTime[iEnemyTeam] = GetGameTime()+duration;
 		
 		int iSentry = MaxClients+1;
 		while((iSentry = FindEntityByClassname(iSentry, "obj_sentrygun")) > MaxClients)
 		{
-			if (GetEntProp(iSentry, Prop_Send, "m_iTeamNum") == iEnnemyTeam)
+			if (GetEntProp(iSentry, Prop_Send, "m_iTeamNum") == iEnemyTeam)
 			{
 				SetEntProp(iSentry, Prop_Send, "m_iTeamNum", iTeam);
 				

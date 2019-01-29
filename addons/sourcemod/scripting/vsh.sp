@@ -2057,12 +2057,21 @@ public Action OnPlayerRunCmd(int iClient,int &buttons,int &impulse, float vel[3]
 			finalAction = Plugin_Changed;
 		}
 		
-		if (g_flTeamInvertedMoveControlsTime[iTeam] != 0.0 && g_flTeamInvertedMoveControlsTime[iTeam] > GetGameTime())
+		// we extend the window in which we compare the game time of g_flTeamInvertedMoveControlsTime to fire a PrintCenterText reset to the client
+		// assuming the player is using the buttons, which they do, 99% of the time
+		if (g_flTeamInvertedMoveControlsTime[iTeam] != 0.0 && g_flTeamInvertedMoveControlsTime[iTeam] > (GetGameTime() + 0.5))
 		{
-			vel[0] = -vel[0];
-			vel[1] = -vel[1];
-			
-			PrintCenterText(iClient, "Your controls are reversed!");
+			if (g_flTeamInvertedMoveControlsTime[iTeam] > GetGameTime())
+			{
+				vel[0] = -vel[0];
+				vel[1] = -vel[1];
+				PrintCenterText(iClient, "Your controls are reversed!");
+			}
+			else
+			{
+				// reset the center text
+				PrintCenterText(iClient, "");
+			}
 		}
 	}
 	

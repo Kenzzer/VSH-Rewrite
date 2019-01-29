@@ -1329,9 +1329,6 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	
 	int iVictimTeam = GetClientTeam(iVictim);
 	if (iVictimTeam <= 1) return Plugin_Continue;
-
-	bool DeadRingered = ((GetEventInt(hEvent, "death_flags") & TF_DEATHFLAG_DEADRINGER) != 0);
-	if (DeadRingered) return Plugin_Continue;
 	
 	TFClassType desiredClass = view_as<TFClassType>(GetEntProp(iVictim, Prop_Send, "m_iDesiredPlayerClass"));
 	if (desiredClass != TFClass_Unknown)

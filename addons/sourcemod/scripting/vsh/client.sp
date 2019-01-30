@@ -662,7 +662,14 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						damagetype &= ~DMG_CRIT;
 						finalAction = Plugin_Changed;
 					}
-					
+
+					// Damage resis is used steak
+					if (TF2_IsPlayerInCondition(victim, TFCond_CritCola) && TF2_IsPlayerInCondition(victim, TFCond_RestrictToMelee))
+					{
+						damage *= config.LookupFloat(g_cvSteakBuffDamageResis);
+						finalAction = Plugin_Changed;
+					}
+
 					// Knockback ubered players
 					if (bVictimUbered)
 					{
@@ -675,30 +682,26 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						ScaleVector(vecVel, 400.0);
 						TeleportEntity(victim, NULL_VECTOR, NULL_VECTOR, vecVel);
 					}
-					
-					// Damage resis is used steak
-					if (TF2_IsPlayerInCondition(victim, TFCond_CritCola) && TF2_IsPlayerInCondition(victim, TFCond_RestrictToMelee))
+					// Else, when not ubered, run code below
+					else
 					{
-						damage *= config.LookupFloat(g_cvSteakBuffDamageResis);
-						finalAction = Plugin_Changed;
-					}
-					
-					// Don't do any dmg and destroy the demoman's shield if they have one
-					int iWearable = SDK_GetEquippedWearable(victim, WeaponSlot_Secondary);
-					if (iWearable > MaxClients)
-					{
-						char sWearableClass[32];
-						GetEdictClassname(iWearable, sWearableClass, sizeof(sWearableClass));
-						if (strcmp(sWearableClass, "tf_wearable_demoshield") == 0)
+						// Don't do any dmg and destroy the demoman's shield if they have one
+						int iWearable = SDK_GetEquippedWearable(victim, WeaponSlot_Secondary);
+						if (iWearable > MaxClients)
 						{
-							EmitSoundToAll(BOSS_BACKSTAB_SOUND, victim, _, SNDLEVEL_DISHWASHER);
-							
-							TF2_AddCondition(victim, TFCond_Bonked, 0.1);
-							TF2_AddCondition(victim, TFCond_SpeedBuffAlly, 1.0);
-							damage = 1.0;
-							
-							TF2_RemoveItemInSlot(victim, WeaponSlot_Secondary);
-							finalAction = Plugin_Changed;
+							char sWearableClass[32];
+							GetEdictClassname(iWearable, sWearableClass, sizeof(sWearableClass));
+							if (strcmp(sWearableClass, "tf_wearable_demoshield") == 0)
+							{
+								EmitSoundToAll(BOSS_BACKSTAB_SOUND, victim, _, SNDLEVEL_DISHWASHER);
+								
+								TF2_AddCondition(victim, TFCond_Bonked, 0.1);
+								TF2_AddCondition(victim, TFCond_SpeedBuffAlly, 1.0);
+								damage = 1.0;
+								
+								TF2_RemoveItemInSlot(victim, WeaponSlot_Secondary);
+								finalAction = Plugin_Changed;
+							}
 						}
 					}
 				}

@@ -104,7 +104,7 @@ methodmap CPainisCupcake < CBaseBoss
 	
 	public int GetHealthPerPlayer()
 	{
-		return 650;
+		return 550;
 	}
 	
 	public TFClassType GetClass()
@@ -141,9 +141,7 @@ methodmap CPainisCupcake < CBaseBoss
 	{
 		char attribs[128];
 		Format(attribs, sizeof(attribs), "68 ; 2.0 ; 2 ; 3.0 ; 252 ; 0.5 ; 259 ; 1.0 ; 329 ; 0.65");
-		int iWep = CreateWeapon(this.Index, "tf_weapon_shovel", 196, 100, TFQual_Strange, attribs);
-		SetEntityRenderMode(iWep, RENDER_TRANSCOLOR);
-		SetEntityRenderColor(iWep, _, _, _, 0);
+		int iWep = CreateWeapon(this.Index, "tf_weapon_shovel", 5, 100, TFQual_Strange, attribs);
 		return iWep;
 	}
 	

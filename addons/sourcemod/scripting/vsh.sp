@@ -12,7 +12,7 @@
 //#include <benextension>
 //#include <sendproxy>
 
-#define PLUGIN_VERSION "0.0.4d"
+#define PLUGIN_VERSION "0.0.4e"
 
 #define MAX_BUTTONS 26
 
@@ -57,6 +57,7 @@
 #define ITEM_MARKET_GARDENER 416
 
 #define BOSS_BACKSTAB_SOUND "player/spy_shield_break.wav"
+#define BOSS_SUPER_RAGE_SOUND "mvm/mvm_tele_activate.wav"
 #define CP_UNLOCK_SOUND		"vsh_rewrite/cp_unlocked.mp3"
 
 #define FL_EDICT_CHANGED	(1<<0)	// Game DLL sets this when the entity state changes
@@ -185,6 +186,18 @@ enum
 	LAST_SHARED_COLLISION_GROUP
 };
 
+enum
+{
+	PATTACH_ABSORIGIN = 0,			// Create at absorigin, but don't follow
+	PATTACH_ABSORIGIN_FOLLOW,		// Create at absorigin, and update to follow the entity
+	PATTACH_CUSTOMORIGIN,			// Create at a custom origin, but don't follow
+	PATTACH_POINT,					// Create on attachment point, but don't follow
+	PATTACH_POINT_FOLLOW,			// Create on attachment point, and update to follow the entity
+	PATTACH_WORLDORIGIN,			// Used for control points that don't attach to an entity
+	PATTACH_ROOTBONE_FOLLOW,		// Create at the root bone of the entity, and update to follow
+	MAX_PATTACH_TYPES,
+};
+
 const float PI = 3.1415926535897932384626433832795;
 static float g_flLastArrowDrawTime;
 
@@ -256,6 +269,7 @@ char g_strMiscBossesType[][] = {
 
 char g_sNextBossType[32];
 
+char g_strTeamColors[][] = {"\x07B2B2B2", "\x07B2B2B2", "\x07FF4040", "\x0799CCFF"};
 
 bool g_bEnabled = true;
 bool g_bRoundStarted = false;
@@ -263,7 +277,7 @@ bool g_bFreezeMovements = false;
 bool g_bBlockRagdoll = false;
 bool g_bSpecialRound = false;
 
-//Main boss data
+// Main boss data
 Handle g_hTimerPickBoss = null;
 Handle g_hTimerBossMusic = null;
 char g_sBossMusic[PLATFORM_MAX_PATH];
@@ -272,13 +286,14 @@ int g_iUserActiveBoss;
 int g_iHealthBarMaxHealth;
 int g_iHealthBarHealth;
 
-//Player data
+// Player data
 int g_iPlayerLastButtons[TF_MAXPLAYERS+1];
 int g_iPlayerTotalBackstab[TF_MAXPLAYERS+1][TF_MAXPLAYERS+1];
 int g_iPlayerDamage[TF_MAXPLAYERS+1];
 int g_iPlayerAssistDamage[TF_MAXPLAYERS+1];
 bool g_bPlayerTriggerSpecialRound[TF_MAXPLAYERS+1];
-float g_flTeamInvertedMoveControlsTime[4];
+float g_flPlayerReverseControl[TF_MAXPLAYERS+1];
+
 enum PlayerPreferences
 {
 	bool:PlayerPreference_RevivalSelect,
@@ -371,6 +386,7 @@ CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 #include "vsh/specialround.sp"
 #include "vsh/menu.sp"
 #include "vsh/preferences.sp"
+#include "vsh/afk.sp"
 
 #include "vsh/natives.sp"
 
@@ -735,6 +751,7 @@ public void OnMapStart()
 		PrecacheParticleSystem("ExplosionCore_MidAir");
 		
 		PrecacheSound(BOSS_BACKSTAB_SOUND);
+		PrecacheSound(BOSS_SUPER_RAGE_SOUND);
 		PrecacheSound("player/doubledonk.wav");
 		PrepareSound(CP_UNLOCK_SOUND);
 		DeathRings_Precache();
@@ -748,6 +765,9 @@ public void OnGameFrame()
 {
 	if (!g_bEnabled) return;
 	if (g_iTotalRoundPlayed <= 0) return;
+	
+	// interfaces think
+	AFK_Think();
 	
 	int iHealthBar = FindEntityByClassname(-1, "monster_resource");
 	
@@ -914,6 +934,10 @@ void Frame_InitVshPreRoundTimer(int iTime)
 	{
 		if (GetEntProp(iGameTimer, Prop_Send, "m_bShowInHUD"))
 		{
+			// Properly fire the outputs
+			FireEntityOutput(iGameTimer, "OnRoundStart");
+			FireEntityOutput(iGameTimer, "OnSetupFinished");
+			FireEntityOutput(iGameTimer, "OnFinished");
 			AcceptEntityInput(iGameTimer, "Kill");
 			break;
 		}
@@ -972,12 +996,11 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 	g_hTimerPickBoss = null;
 	g_hTimerBossMusic = null;
 	g_hTimerCPUnlockSound = null;
-	g_flTeamInvertedMoveControlsTime[TFTeam_Red] = 0.0;
-	g_flTeamInvertedMoveControlsTime[TFTeam_Blue] = 0.0;
 	g_bRoundStarted = false;
 	g_bFreezeMovements = true;
 	
 	SpecialRound_Reset();
+	AFK_CleanUp();
 	
 	bool bMusicPlayedLastRound = (strcmp(g_sBossMusic, "") == 0);
 	// New round started
@@ -992,6 +1015,7 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 		g_clientBoss[iClient] = INVALID_BOSS;
 		g_iPlayerDamage[iClient] = 0;
 		g_iPlayerAssistDamage[iClient] = 0;
+		g_flPlayerReverseControl[iClient] = 0.0;
 		
 		for (int i = 1; i <= TF_MAXPLAYERS; i++)
 			g_iPlayerTotalBackstab[iClient][i] = 0;
@@ -1120,6 +1144,8 @@ public Action Event_RoundArenaStart(Event event, const char[] sName, bool bDontB
 	
 	GameRules_SetPropFloat("m_flCapturePointEnableTime", 31536000.0+GetGameTime());
 	DeathRings_Setup(240);
+	ControlPoint_Unlock(180.0);
+	AFK_BeginTrack(40.0, 10.0);
 	
 	g_bRoundStarted = true;
 	g_bFreezeMovements = false;
@@ -1134,6 +1160,7 @@ public Action Event_RoundEnd(Event event, const char[] sName, bool bDontBroadcas
 	g_bRoundStarted = false;
 	
 	DeathRings_Cleanup();
+	AFK_CleanUp();
 	
 	int iWinningTeam = event.GetInt("team");
 	SpecialRound_OnRoundEnd(iWinningTeam);
@@ -1330,7 +1357,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	int iVictimTeam = GetClientTeam(iVictim);
 	if (iVictimTeam <= 1) return Plugin_Continue;
 	
-	bool bDeadRingered = ((GetEventInt(hEvent, "death_flags") & TF_DEATHFLAG_DEADRINGER) != 0);
+	bool bDeadRingered = ((event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER) != 0);
 	
 	TFClassType desiredClass = view_as<TFClassType>(GetEntProp(iVictim, Prop_Send, "m_iDesiredPlayerClass"));
 	if (desiredClass != TFClass_Unknown)
@@ -1371,7 +1398,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 		}
 		else if (iLastAlive == 1)
 		{
-			//Find the last one alive and crit them
+			// Find the last one alive and crit them
 			for (int i = 1; i <= MaxClients; i++)
 			{
 				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid())
@@ -2052,18 +2079,16 @@ public Action OnPlayerRunCmd(int iClient,int &buttons,int &impulse, float vel[3]
 	int iTeam = GetClientTeam(iClient);
 	if (iTeam > 1)
 	{
-		if (g_bFreezeMovements)
+		if (!g_bRoundStarted)
 		{
 			// Disallow moving during pre round phase
 			vel = NULL_VECTOR;
 			finalAction = Plugin_Changed;
 		}
 		
-		// we extend the window in which we compare the game time of g_flTeamInvertedMoveControlsTime to fire a PrintCenterText reset to the client
-		// assuming the player is using the buttons, which they do, 99% of the time
-		if (g_flTeamInvertedMoveControlsTime[iTeam] != 0.0 && g_flTeamInvertedMoveControlsTime[iTeam] > (GetGameTime() + 0.5))
+		if (g_flPlayerReverseControl[iClient] != 0.0)
 		{
-			if (g_flTeamInvertedMoveControlsTime[iTeam] > GetGameTime())
+			if (g_flPlayerReverseControl[iClient] > GetGameTime())
 			{
 				vel[0] = -vel[0];
 				vel[1] = -vel[1];
@@ -2073,6 +2098,7 @@ public Action OnPlayerRunCmd(int iClient,int &buttons,int &impulse, float vel[3]
 			{
 				// reset the center text
 				PrintCenterText(iClient, "");
+				g_flPlayerReverseControl[iClient] = 0.0;
 			}
 		}
 	}
@@ -2793,6 +2819,30 @@ stock float AngleNormalize(float angle)
 	while (angle > PI) angle -= PI;
 	while (angle < -PI) angle += PI;
 	return angle;
+}
+
+void TE_Particle(int iParticleIndex, float origin[3]=NULL_VECTOR, float start[3]=NULL_VECTOR, float angles[3]=NULL_VECTOR, int entindex=-1, int attachtype=-1, int attachpoint=-1, bool resetParticles=true)
+{
+    TE_Start("TFParticleEffect");
+    TE_WriteFloat("m_vecOrigin[0]", origin[0]);
+    TE_WriteFloat("m_vecOrigin[1]", origin[1]);
+    TE_WriteFloat("m_vecOrigin[2]", origin[2]);
+    TE_WriteFloat("m_vecStart[0]", start[0]);
+    TE_WriteFloat("m_vecStart[1]", start[1]);
+    TE_WriteFloat("m_vecStart[2]", start[2]);
+    TE_WriteVector("m_vecAngles", angles);
+    TE_WriteNum("m_iParticleSystemIndex", iParticleIndex);
+    TE_WriteNum("entindex", entindex);
+
+    if(attachtype != -1)
+    {
+        TE_WriteNum("m_iAttachType", attachtype);
+    }
+    if(attachpoint != -1)
+    {
+        TE_WriteNum("m_iAttachmentPointIndex", attachpoint);
+    }
+    TE_WriteNum("m_bResetParticles", resetParticles ? 1 : 0);
 }
 
 void UTIL_ScreenShake(float center[3], float amplitude, float frequency, float duration, float radius, int command, bool airShake)

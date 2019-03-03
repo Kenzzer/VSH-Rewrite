@@ -69,8 +69,8 @@ void SpecialRounds_OnMapStart()
 {
 	g_iYetiModelIndex = PrecacheModel("models/player/items/taunts/yeti/yeti.mdl");
 	PrecacheModel("models/buildables/sentry3.mdl");
-	PrecacheModel(SR_MUSIC);
-	PrecacheModel(SR_SOUND_SELECT);
+	PrecacheSound(SR_MUSIC);
+	PrecacheSound(SR_SOUND_SELECT);
 	PrecacheModel(MODEL_FLAG);
 	
 	CSentryBuster buster;

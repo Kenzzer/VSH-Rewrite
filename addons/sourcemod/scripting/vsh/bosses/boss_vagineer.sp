@@ -56,6 +56,14 @@ methodmap CVagineer < CBaseBoss
 		CReverseGame reverse = view_as<CReverseGame>(boss.RegisterAbility("CReverseGame"));
 		reverse.flReverseDuration = 10.0;
 		boss.iMaxRageDamage = 2300;
+		
+		CLightRage light = view_as<CLightRage>(boss.RegisterAbility("CLightRage"));
+		light.flLigthRageDuration = 10.0;
+		light.flLightRageRadius = 800.0;
+		light.iRageLightBrigthness = 5;
+		
+		int iColor[4] = {0, 255, 0, 255};
+		light.SetColor(iColor);
 	}
 	
 	public int GetBaseHealth()

@@ -23,6 +23,15 @@ static Handle g_hClientBossModelTimer[TF_MAXPLAYERS+1];
 static Handle g_hClientBossRageMusicFadeTime[TF_MAXPLAYERS+1];
 static Handle g_hBossRageHud;
 
+static int g_iParticleRedStars = -1;
+static int g_iParticleBluStars = -1;
+static int g_iParticleYellowStars = -1;
+static int g_iParticleFlashBlu = -1;
+static int g_iParticleFlashRed = -1;
+static int g_iParticleMegaFlash = -1;
+static int g_iParticleRageFlashRed = -1;
+static int g_iParticleRageFlashBlu = -1;
+
 methodmap CBaseBoss
 {
 	property int Index
@@ -159,9 +168,44 @@ methodmap CBaseBoss
 		}
 		public set(int val)
 		{
+			int iOldDamage = g_iClientRageDamage[this.Index];
 			g_iClientRageDamage[this.Index] = val;
-			if (g_iClientRageDamage[this.Index] > this.iMaxRageDamage*2) g_iClientRageDamage[this.Index] = this.iMaxRageDamage*2;
-			if (g_iClientRageDamage[this.Index] < 0) g_iClientRageDamage[this.Index] = 0;
+			
+			if (g_iClientRageDamage[this.Index] >= this.iMaxRageDamage*2)
+			{
+				g_iClientRageDamage[this.Index] = this.iMaxRageDamage*2;
+				// First time reaching 200% rage
+				// Setup particle
+				if (iOldDamage < this.iMaxRageDamage*2)
+				{
+					TE_Particle(g_iParticleYellowStars, NULL_VECTOR, NULL_VECTOR, NULL_VECTOR, this.Index, PATTACH_ABSORIGIN_FOLLOW);
+					TE_SendToAll();
+				}
+			}
+			else if (g_iClientRageDamage[this.Index] >= this.iMaxRageDamage)
+			{
+				// First time reaching 100% rage or drained from 200%
+				// Setup particle
+				if (iOldDamage < this.iMaxRageDamage || iOldDamage == this.iMaxRageDamage*2)
+				{
+					TE_Particle((GetClientTeam(this.Index) == TFTeam_Blue) ? g_iParticleBluStars : g_iParticleRedStars, NULL_VECTOR, NULL_VECTOR, NULL_VECTOR, this.Index, PATTACH_ABSORIGIN_FOLLOW);
+					TE_SendToAll();
+				}
+			}
+			else if (g_iClientRageDamage[this.Index] <= 0)
+			{
+				g_iClientRageDamage[this.Index] = 0;
+			}
+			else
+			{
+				// Drained from 100% rage
+				// Stop the stars particles
+				if (g_iClientRageDamage[this.Index] < this.iMaxRageDamage && iOldDamage >= this.iMaxRageDamage)
+				{
+					TE_Particle((GetClientTeam(this.Index) == TFTeam_Blue) ? g_iParticleFlashBlu : g_iParticleFlashRed, NULL_VECTOR, NULL_VECTOR, NULL_VECTOR, this.Index, PATTACH_ABSORIGIN_FOLLOW);
+					TE_SendToAll();
+				}
+			}
 		}
 	}
 	
@@ -218,7 +262,7 @@ methodmap CBaseBoss
 		int iEnemy = 0;
 		for (int i = 1; i <= MaxClients; i++)
 		{
-			if (IsClientInGame(i))
+			if (IsClientInGame(i) && IsPlayerAlive(i))
 			{
 				int iTargetTeam = GetClientTeam(i);
 				if (iTargetTeam > 0 && iTargetTeam != iTeam)
@@ -703,10 +747,25 @@ methodmap CBaseBoss
 		
 		this.iRageDamage -= this.iMaxRageDamage*iNumRageRemove;
 		
-
 		this.GetRageSound(sSound, sizeof(sSound));
 		if (strcmp(sSound, "") != 0)
 			EmitSoundToAll(sSound, this.Index, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT);
+		
+		if (bSuperRage)
+		{
+			// Visual cue for super rage
+			TE_Particle(g_iParticleMegaFlash, NULL_VECTOR, NULL_VECTOR, NULL_VECTOR, this.Index, PATTACH_ABSORIGIN_FOLLOW);
+			TE_SendToAll();
+			
+			// Sound cue for super rage
+			EmitSoundToAll(BOSS_SUPER_RAGE_SOUND);
+		}
+		else
+		{
+			// Visual cue for normal rage
+			TE_Particle((GetClientTeam(this.Index) == TFTeam_Blue) ? g_iParticleRageFlashBlu : g_iParticleRageFlashRed, NULL_VECTOR, NULL_VECTOR, NULL_VECTOR, this.Index, PATTACH_ABSORIGIN_FOLLOW);
+			TE_SendToAll();
+		}
 	}
 	
 	public void OnButtonPress(int button)
@@ -975,6 +1034,15 @@ methodmap CBaseBoss
 	{
 		if (this.FindFunction("Precache"))
 			Call_Finish();
+		
+		g_iParticleRedStars = PrecacheParticleSystem("burningplayer_rainbow_stars01");
+		g_iParticleBluStars = PrecacheParticleSystem("burningplayer_rainbow_stars02");
+		g_iParticleYellowStars = PrecacheParticleSystem("burningplayer_rainbow_stars03");
+		g_iParticleMegaFlash = PrecacheParticleSystem("eb_death_flash");
+		g_iParticleFlashBlu = PrecacheParticleSystem("electrocuted_gibbed_blue_flash");
+		g_iParticleFlashRed = PrecacheParticleSystem("electrocuted_gibbed_red_flash");
+		g_iParticleRageFlashBlu = PrecacheParticleSystem("electrocuted_red_flash");
+		g_iParticleRageFlashRed = PrecacheParticleSystem("electrocuted_blue_flash");
 	}
 	
 	public void Destroy()
@@ -1006,6 +1074,9 @@ methodmap CBaseBoss
 			delete g_hClientBossModelTimer[this.Index];
 			g_hClientBossModelTimer[this.Index] = null;
 		}
+		
+		SetVariantString("ParticleEffectStop");
+		AcceptEntityInput(this.Index, "DispatchEffect");
 	}
 }
 

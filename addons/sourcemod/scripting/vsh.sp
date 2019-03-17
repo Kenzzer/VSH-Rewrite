@@ -988,8 +988,13 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 		// Attempt something to resolve the issue
 		// Doesn't matter who is force switched as long it resolves the issue within valve's code
 		for (int iClient = 1; iClient <= MaxClients; iClient++)
-			if (IsClientInGame(iClient))
+		{
+			if (IsClientInGame(iClient) && GetClientTeam(iClient) > 1)
+			{
 				ChangeClientTeam(iClient, (!bRed) ? TFTeam_Red : TFTeam_Blue);
+				break; // We just need one person switched
+			}
+		}
 		return;
 	}
 	

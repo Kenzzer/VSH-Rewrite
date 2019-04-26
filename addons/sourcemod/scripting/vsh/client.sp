@@ -1,5 +1,6 @@
 
 static float g_flClientZombieLastDamage[TF_MAXPLAYERS+1];
+static float g_flClientScoutLastHypeDrain[TF_MAXPLAYERS+1];
 static int g_iClientFlags[TF_MAXPLAYERS+1];
 
 static Handle g_hClientSpecialModelTimer[TF_MAXPLAYERS+1] = {null, ...};
@@ -114,6 +115,7 @@ void Client_PutInServer(int iClient)
 	g_hClientSpecialRoundTimer[iClient] = null;
 	g_iClientFlags[iClient] = 0;
 	g_flClientZombieLastDamage[iClient] = 0.0;
+	g_flClientScoutLastHypeDrain[iClient] = 0.0;
 }
 
 void Client_Disconnect(int iClient)
@@ -203,11 +205,29 @@ public void Client_OnThink(int iClient)
 		
 		int iActiveWep = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 		
+		char weaponPrimaryClass[32];
 		char weaponSecondaryClass[32];
-		//if (iPrimaryWep >= 0) GetEdictClassname(iPrimaryWep, weaponPrimaryClass, sizeof(weaponPrimaryClass));
+		if (iPrimaryWep >= 0) GetEdictClassname(iPrimaryWep, weaponPrimaryClass, sizeof(weaponPrimaryClass));
 		if (iSecondaryWep >= 0) GetEdictClassname(iSecondaryWep, weaponSecondaryClass, sizeof(weaponSecondaryClass));
 		//if (iMeleeWep >= 0) GetEdictClassname(iMeleeWep, weaponMeleeClass, sizeof(weaponMeleeClass));
 	
+		// Baby Face's Blaster
+		if (iPrimaryWep > MaxClients && strcmp(weaponPrimaryClass, "tf_weapon_pep_brawler_master") == 0)
+		{
+			float flMaxHype = tf_scout_hype_pep_max.FloatValue; // max meter
+			float flDrain = flMaxHype * 0.07; // 7% of max meter
+			float flMinimumForDrain = flMaxHype * 0.2; // 20% of max meter
+			float flHype = GetEntPropFloat(iClient, Prop_Send, "m_flHypeMeter"); // client's hype meter
+			if (flHype >= flMinimumForDrain && (g_flClientScoutLastHypeDrain[iClient] == 0.0 || g_flClientScoutLastHypeDrain[iClient] <= GetGameTime()-1.0))
+			{
+				// Add automatic drain of the meter if higher than flMinimumForDrain
+				SetEntPropFloat(iClient, Prop_Send, "m_flHypeMeter", (flHype - flDrain < flMinimumForDrain) ? flMinimumForDrain : (flHype - flDrain));
+				TF2_AddCondition(iClient, TFCond_SpeedBuffAlly, 0.01); // Should be necessary
+				g_flClientScoutLastHypeDrain[iClient] = GetGameTime();
+			}
+		}
+	
+		// Mediguns
 		if (iSecondaryWep > MaxClients && strcmp(weaponSecondaryClass, "tf_weapon_medigun") == 0)
 		{
 			int iHealTarget = GetEntPropEnt(iSecondaryWep, Prop_Send, "m_hHealingTarget");

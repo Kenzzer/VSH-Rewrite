@@ -929,7 +929,7 @@ methodmap CBaseBoss
 			
 			if (damagecustom == TF_CUSTOM_BACKSTAB && !TF2_IsUbercharged(this.Index))
 			{
-				damage = (0.10*float(SDK_GetMaxHealth(this.Index)))/(Pow(1.07,float(TF2_GetTeamAlivePlayers(GetClientTeam(attacker)))))/2.5;
+				damage = (0.10*float(SDK_GetMaxHealth(this.Index)))/(Pow(1.07,float(VSH_GetTeamCount(GetClientTeam(attacker), true, false, false))))/2.5;
 				damagetype |= DMG_PREVENT_PHYSICS_FORCE;
 				
 				ScaleVector(damageForce, 0.03);

@@ -55,6 +55,9 @@ void AFK_Think()
 			g_vecPlayerAfkEyeAngles[i] = vecAng;
 			g_iPlayerAfkLastButtons[i] = iCurrentButtons;
 			
+			if (g_flPlayerLastAfkTime[i] < (flGameTime-g_flAfkMaxTime+5.0))
+				PrintCenterText(i, "You are currently AFK. Please Move! %0.0f sec left", g_flAfkMaxTime-(flGameTime-g_flPlayerLastAfkTime[i]));
+			
 			if (g_flPlayerLastAfkTime[i] < flGameTime-g_flAfkMaxTime)
 			{
 				PrintToChatAll("%s %sSlayed and moved to spectator team %s%N%s for being AFK...", VSH_TAG, VSH_TEXT_COLOR, g_strTeamColors[GetClientTeam(i)], i, VSH_TEXT_COLOR);

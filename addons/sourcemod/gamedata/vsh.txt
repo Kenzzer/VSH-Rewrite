@@ -16,6 +16,11 @@
 		}
 		"Offsets"
 		{
+			"IPhysicsObject::AddVelocity"
+			{
+				"linux"		"53"
+				"windows"	"52"
+			}
 			"CBaseEntity::ShouldTransmit"
 			{
 				"linux"		"19"

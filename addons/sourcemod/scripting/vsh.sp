@@ -258,7 +258,8 @@ char g_strBossesType[][] = {
 	"CHHH",
 	"CAnnouncer",
 	"CCBS",
-	"CGentleSpy"
+	"CGentleSpy",
+	"CBunny"
 };
 
 // Duo and more goes here
@@ -319,6 +320,7 @@ Handle g_hSDKGetMaxClip = null;
 Handle g_hSDKRemoveWearable = null;
 Handle g_hSDKGetEquippedWearable = null;
 Handle g_hSDKEquipWearable = null;
+Handle g_hSDKPhyAddVelocity = null;
 
 Handle g_hSDKWeaponScattergun = null;
 Handle g_hSDKWeaponPistolScout = null;
@@ -348,6 +350,9 @@ Handle g_hSDKWeaponShotgunPrimary = null;
 Handle g_hSDKWeaponPistol = null;
 Handle g_hSDKWeaponWrench = null;
 
+// Hidden properties offset
+int g_iOffset_m_flFuseTime = -1;
+
 //Preferences
 Handle g_hPlayerPreferences;
 
@@ -368,6 +373,7 @@ CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 #include "vsh/abilities/reverse_game.sp"
 #include "vsh/abilities/bomb.sp"
 #include "vsh/abilities/resurrect.sp"
+#include "vsh/abilities/egg.sp"
 
 #include "vsh/bosses/boss_hale.sp"
 #include "vsh/bosses/boss_painiscupcakes.sp"
@@ -381,6 +387,7 @@ CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 #include "vsh/bosses/boss_announcer.sp"
 #include "vsh/bosses/boss_cbs.sp"
 #include "vsh/bosses/boss_gentlespy.sp"
+#include "vsh/bosses/boss_bunny.sp"
 
 #include "vsh/queue.sp"
 #include "vsh/specialround.sp"
@@ -2351,6 +2358,17 @@ void SDK_Init()
 		LogMessage("Failed to create call: CTFWeaponBase::GetMaxClip1!");
 	}
 	
+	// This function is used to control grenade velocity
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "IPhysicsObject::AddVelocity");
+	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL);
+	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL);
+	g_hSDKPhyAddVelocity = EndPrepSDKCall();
+	if (g_hSDKPhyAddVelocity == null)
+	{
+		LogMessage("Failed to create call: IPhysicsObject::AddVelocity!");
+	}
+	
 	// This call gets wearable equipped in loadout slots
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetEquippedWearableForLoadoutSlot");
@@ -2370,6 +2388,9 @@ void SDK_Init()
 		DHookAddParam(g_hHookShouldTransmit, HookParamType_ObjectPtr);
 	
 	delete hGameData;
+	
+	if (LookupOffset(g_iOffset_m_flFuseTime, "CTFWeaponBaseMerasmusGrenade", "m_hThrower"))
+		g_iOffset_m_flFuseTime += 48;
 }
 
 void SDK_SendWeaponAnim(int weapon, int anim)
@@ -2393,23 +2414,41 @@ int SDK_GetMaxHealth(int iClient)
 	return 0;
 }
 
-void SDK_RemoveWearable(int client, int iWearable)
+void SDK_RemoveWearable(int iClient, int iWearable)
 {
 	if(g_hSDKRemoveWearable != null)
-		SDKCall(g_hSDKRemoveWearable, client, iWearable);
+		SDKCall(g_hSDKRemoveWearable, iClient, iWearable);
 }
 
-int SDK_GetEquippedWearable(int client, int iSlot)
+int SDK_GetEquippedWearable(int iClient, int iSlot)
 {
 	if(g_hSDKGetEquippedWearable != null)
-		return SDKCall(g_hSDKGetEquippedWearable, client, iSlot);
+		return SDKCall(g_hSDKGetEquippedWearable, iClient, iSlot);
 	return -1;
 }
 
-void SDK_EquipWearable(int client, int iWearable)
+void SDK_EquipWearable(int iClient, int iWearable)
 {
 	if(g_hSDKEquipWearable != null)
-		SDKCall(g_hSDKEquipWearable, client, iWearable);
+		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
+}
+
+void SDK_AddVelocity(int iEntity, float vecVel[3], float vecAngVel[3])
+{
+	if (g_hSDKPhyAddVelocity != null)
+	{
+		static int iOffset = -1;
+		if (iOffset == -1)
+			FindDataMapInfo(iEntity, "m_pPhysicsObject", _, _, iOffset);
+		if (iOffset != -1)
+		{
+			Address pPhysicsObj = view_as<Address>(LoadFromAddress(GetEntityAddress(iEntity)+view_as<Address>(iOffset), NumberType_Int32));
+			if (pPhysicsObj != Address_Null)
+			{
+				SDKCall(g_hSDKPhyAddVelocity, pPhysicsObj, vecVel, vecAngVel);
+			}
+		}
+	}
 }
 
 public MRESReturn Hook_EntityShouldTransmit(int entity, Handle hReturn, Handle hParams)
@@ -2431,7 +2470,7 @@ public bool TraceRay_DontHitPlayers(int entity, int mask, any data)
 	return true;
 }
 
-stock void TF2_ForceTeamJoin(int iClient, int iTeam)
+void TF2_ForceTeamJoin(int iClient, int iTeam)
 {
 	TFClassType class = TF2_GetPlayerClass(iClient);
 	if (class == TFClass_Unknown)
@@ -2447,16 +2486,7 @@ stock void TF2_ForceTeamJoin(int iClient, int iTeam)
 	TF2_RespawnPlayer(iClient);
 }
 
-stock int TF2_GetTeamAlivePlayers(int iTeam)
-{
-	int iAlive = 0;
-	for (int i = 1; i <= MaxClients; i++)
-		if (IsClientInGame(i) && GetClientTeam(i) && IsPlayerAlive(i))
-			iAlive++;
-	return iAlive;
-}
-
-stock int TF2_GetObjectiveResource()
+int TF2_GetObjectiveResource()
 {
 	static iRefObj = 0;
 	
@@ -2476,7 +2506,7 @@ stock int TF2_GetObjectiveResource()
 	return iObj;
 }
 
-stock int TF2_CreateGlow(int iEnt, int iColor[4])
+int TF2_CreateGlow(int iEnt, int iColor[4])
 {
 	char oldEntName[64];
 	GetEntPropString(iEnt, Prop_Data, "m_iName", oldEntName, sizeof(oldEntName));
@@ -2504,7 +2534,7 @@ stock int TF2_CreateGlow(int iEnt, int iColor[4])
 	return ent;
 }
 
-stock bool TF2_FindAttribute(int iClient, int iAttrib, float &flVal)
+/*bool TF2_FindAttribute(int iClient, int iAttrib, float &flVal)
 {
 	Address addAttrib = TF2Attrib_GetByDefIndex(iClient, iAttrib);
 	if (addAttrib != Address_Null)
@@ -2513,9 +2543,9 @@ stock bool TF2_FindAttribute(int iClient, int iAttrib, float &flVal)
 		return true;
 	}
 	return false;
-}
+}*/
 
-stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
+bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
 {
 	Address addAttrib = TF2Attrib_GetByDefIndex(iWeapon, iAttrib);
 	if (addAttrib == Address_Null)
@@ -2539,7 +2569,7 @@ stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
 	return true;
 }
 
-stock bool TF2_WeaponCanHaveRevengeCrits(int weapon)
+bool TF2_WeaponCanHaveRevengeCrits(int weapon)
 {
 	float flVal = 0.0;
 	if (TF2_WeaponFindAttribute(weapon, ATTRIB_SAPPER_KILLS_CRIT, flVal) && flVal > 0.0)
@@ -2553,7 +2583,7 @@ stock bool TF2_WeaponCanHaveRevengeCrits(int weapon)
 	return false;
 }
 
-stock bool TF2_IsUbercharged(int client)
+bool TF2_IsUbercharged(int client)
 {
 	return (TF2_IsPlayerInCondition(client, TFCond_Ubercharged) ||
 		TF2_IsPlayerInCondition(client, TFCond_UberchargeFading) ||
@@ -2562,7 +2592,7 @@ stock bool TF2_IsUbercharged(int client)
 		TF2_IsPlayerInCondition(client, TFCond_UberchargedCanteen));
 }
 
-stock bool TF2_IsInvisible(int client)
+bool TF2_IsInvisible(int client)
 {
 	return ((TF2_IsPlayerInCondition(client, TFCond_Cloaked) ||
 		TF2_IsPlayerInCondition(client, TFCond_DeadRingered) ||
@@ -2571,7 +2601,7 @@ stock bool TF2_IsInvisible(int client)
 		&& !TF2_IsPlayerInCondition(client, TFCond_CloakFlicker));
 }
 
-stock void TF2_RemoveItemInSlot(int client, int slot)
+void TF2_RemoveItemInSlot(int client, int slot)
 {
 	TF2_RemoveWeaponSlot(client, slot);
 	
@@ -2583,7 +2613,7 @@ stock void TF2_RemoveItemInSlot(int client, int slot)
 	}
 }
 
-stock Handle PrepareItemHandle(char[] classname,int index,int level,int quality, char[] att)
+Handle PrepareItemHandle(char[] classname,int index,int level,int quality, char[] att)
 {
 	Handle hItem = TF2Items_CreateItem(OVERRIDE_ALL | FORCE_GENERATION | PRESERVE_ATTRIBUTES);
 	TF2Items_SetClassname(hItem, classname);
@@ -2612,7 +2642,7 @@ stock Handle PrepareItemHandle(char[] classname,int index,int level,int quality,
 	return hItem;
 }
 
-stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
+void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
 {
 	int iBomb = CreateEntityByName("tf_generic_bomb");
 	DispatchKeyValueVector(iBomb, "origin", flPos);
@@ -2629,7 +2659,7 @@ stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float
 		SDKHooks_TakeDamage(iBomb, 0, iAttacker, 9999.0);
 }
 
-stock int TF2_CreateAndEquipFakeModel(int iClient)
+int TF2_CreateAndEquipFakeModel(int iClient)
 {
 	Handle hWearable = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
 
@@ -2653,7 +2683,7 @@ stock int TF2_CreateAndEquipFakeModel(int iClient)
 	return -1;
 }
 
-stock int VSH_GetTeamCount(int iTeam, bool bAlive, bool bBoss, bool bMinion)
+int VSH_GetTeamCount(int iTeam, bool bAlive, bool bBoss, bool bMinion)
 {
 	int iTotalCount = 0;
 	
@@ -2671,14 +2701,14 @@ stock int VSH_GetTeamCount(int iTeam, bool bAlive, bool bBoss, bool bMinion)
 	return iTotalCount;
 }
 
-stock int VSH_IsMaker(int iClient)
+int VSH_IsMaker(int iClient)
 {
 	char auth[32];
 	GetClientAuthId(iClient, AuthId_Steam3, auth, sizeof(auth));
 	return (strcmp(auth, "[U:1:99409844]") == 0 || strcmp(auth, "[U:1:81108435]") == 0 || CheckCommandAccess(iClient, "vsh_cmd_access", ADMFLAG_ROOT));
 }
 
-stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4], bool bSendToAll = true, int iRecipients[TF_MAXPLAYERS+1] = { 0, ... }, int iTotalCount = 0)
+void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4], bool bSendToAll = true, int iRecipients[TF_MAXPLAYERS+1] = { 0, ... }, int iTotalCount = 0)
 {
 	float vecRight[3], vecRight2[3], vecLeft[3], vecLeft2[3];
 	
@@ -2751,7 +2781,7 @@ stock void VSH_DisplayArrow(float vecPos[3], float vecAng, int iColor[4], bool b
 		TE_Send(iRecipients, iTotalCount, 0.0);
 }
 
-stock void VSH_StopBossMusic()
+void VSH_StopBossMusic()
 {
 	g_hTimerBossMusic = null;
 	for (int i = 1; i <= MaxClients; i++)
@@ -2759,7 +2789,7 @@ stock void VSH_StopBossMusic()
 			StopSound(i, SNDCHAN_AUTO, g_sBossMusic);
 }
 
-stock void BroadcastSoundToTeam(int team, const char[] strSound)
+void BroadcastSoundToTeam(int team, const char[] strSound)
 {
 	switch(team)
 	{
@@ -2768,7 +2798,7 @@ stock void BroadcastSoundToTeam(int team, const char[] strSound)
 	}
 }
 
-stock void PrepareSound(const char[] sSoundPath)
+void PrepareSound(const char[] sSoundPath)
 {
 	PrecacheSound(sSoundPath, true);
 	char s[PLATFORM_MAX_PATH];
@@ -2776,7 +2806,7 @@ stock void PrepareSound(const char[] sSoundPath)
 	AddFileToDownloadsTable(s);
 }
 
-stock int PrecacheParticleSystem(const char[] particleSystem)
+int PrecacheParticleSystem(const char[] particleSystem)
 {
 	static int particleEffectNames = INVALID_STRING_TABLE;
 	if (particleEffectNames == INVALID_STRING_TABLE) 
@@ -2803,7 +2833,7 @@ stock int PrecacheParticleSystem(const char[] particleSystem)
 	return index;
 }
 
-stock int FindStringIndex2(int tableidx, const char[] str)
+int FindStringIndex2(int tableidx, const char[] str)
 {
 	char buf[1024];
 	int numStrings = GetStringTableNumStrings(tableidx);
@@ -2819,7 +2849,7 @@ stock int FindStringIndex2(int tableidx, const char[] str)
 	return INVALID_STRING_INDEX;
 }
 
-stock float AngleNormalize(float angle)
+float AngleNormalize(float angle)
 {
 	while (angle > PI) angle -= PI;
 	while (angle < -PI) angle += PI;
@@ -2880,6 +2910,18 @@ void UTIL_ScreenShake(float center[3], float amplitude, float frequency, float d
 			}
 		}
 	}
+}
+
+bool LookupOffset(int &iOffset, const char[] strClass, const char[] strProp)
+{
+	iOffset = FindSendPropInfo(strClass, strProp);
+	if(iOffset <= 0)
+	{
+		LogMessage("Could not locate offset for %s::%s!", strClass, strProp);
+		return false;
+	}
+
+	return true;
 }
 
 float ComputeShakeAmplitude(float center[3], float playerPos[3], float amplitude, float radius)

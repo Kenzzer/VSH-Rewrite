@@ -205,8 +205,7 @@ public void Client_OnThink(int iClient)
 		
 		int iActiveWep = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 		
-		char weaponPrimaryClass[32];
-		char weaponSecondaryClass[32];
+		char weaponPrimaryClass[32], weaponSecondaryClass[32];
 		if (iPrimaryWep >= 0) GetEdictClassname(iPrimaryWep, weaponPrimaryClass, sizeof(weaponPrimaryClass));
 		if (iSecondaryWep >= 0) GetEdictClassname(iSecondaryWep, weaponSecondaryClass, sizeof(weaponSecondaryClass));
 		//if (iMeleeWep >= 0) GetEdictClassname(iMeleeWep, weaponMeleeClass, sizeof(weaponMeleeClass));
@@ -226,7 +225,7 @@ public void Client_OnThink(int iClient)
 				g_flClientScoutLastHypeDrain[iClient] = GetGameTime();
 			}
 		}
-	
+		
 		// Mediguns
 		if (iSecondaryWep > MaxClients && strcmp(weaponSecondaryClass, "tf_weapon_medigun") == 0)
 		{
@@ -632,7 +631,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 						{
 							if (TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping))
 							{
-								damage = ( ( 0.03*float(SDK_GetMaxHealth(victim)) ) / ( Pow(1.04,float(TF2_GetTeamAlivePlayers(GetClientTeam(attacker)))) ) )/3.0;
+								damage = ( ( 0.03*float(SDK_GetMaxHealth(victim)) ) / ( Pow(1.04,float(VSH_GetTeamCount(GetClientTeam(attacker), true, false, false))) ) )/3.0;
 								if (damage < 200.0) damage = 200.0;
 								
 								damagetype |= DMG_CRIT;

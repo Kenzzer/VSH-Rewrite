@@ -395,7 +395,11 @@ CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 #include "vsh/preferences.sp"
 #include "vsh/afk.sp"
 
-#include "vsh/natives.sp"
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	CBaseBoss.RegisterNatives();
+	return APLRes_Success;
+}
 
 public void OnPluginStart()
 {
@@ -491,7 +495,6 @@ public void OnPluginStart()
 	
 	SDK_Init();
 	Queue_Init();
-	Natives_Init();
 	
 	SpecialRounds_Refresh();
 	
@@ -700,7 +703,7 @@ void PluginStop(bool bError = false, const char[] sError = "")
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
-		if (g_clientBoss[iClient].IsValid())
+		if (g_clientBoss[iClient].IsValid)
 			g_clientBoss[iClient].Destroy();
 		g_clientBoss[iClient] = INVALID_BOSS;
 	}
@@ -823,7 +826,7 @@ public void OnGameFrame()
 			
 			for (int iAlly = 1; iAlly <= MaxClients; iAlly++)
 			{
-				if (iAlly != iActiveBoss && IsClientInGame(iAlly) && GetClientTeam(iAlly) == iBossTeam && g_clientBoss[iAlly].IsValid() && !g_clientBoss[iAlly].IsMinion)
+				if (iAlly != iActiveBoss && IsClientInGame(iAlly) && GetClientTeam(iAlly) == iBossTeam && g_clientBoss[iAlly].IsValid && !g_clientBoss[iAlly].IsMinion)
 				{
 					if (IsPlayerAlive(iAlly))
 					{
@@ -892,7 +895,7 @@ public void OnEntityDestroyed(int iEntity)
 public Action Arrow_OnTouch(int iEntity, int iOther)
 {
 	int iClient = GetEntPropEnt(iEntity, Prop_Send, "m_hOwnerEntity");
-	if (0 < iClient <= MaxClients && IsClientInGame(iClient) && !g_clientBoss[iClient].IsValid())
+	if (0 < iClient <= MaxClients && IsClientInGame(iClient) && !g_clientBoss[iClient].IsValid)
 	{
 		float vecPos[3];
 		GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", vecPos);
@@ -906,7 +909,7 @@ public Action Arrow_OnTouch(int iEntity, int iOther)
 void Frame_SoldierConcherorUberBuff(int iUserID)
 {
 	int iClient = GetClientOfUserId(iUserID);
-	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient) || g_clientBoss[iClient].IsValid()) return;
+	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient) || g_clientBoss[iClient].IsValid) return;
 	
 	bool bRage = !!GetEntProp(iClient, Prop_Send, "m_bRageDraining");
 	if (bRage)
@@ -969,6 +972,16 @@ void Frame_InitVshPreRoundTimer(int iTime)
 	event.Fire();
 }
 
+void Frame_DestroyBoss(int iUserID)
+{
+	int iClient = GetClientOfUserId(iUserID);
+	if (iClient > 0 && g_clientBoss[iClient].IsValid)
+	{
+		g_clientBoss[iClient].Destroy();
+		g_clientBoss[iClient] = INVALID_BOSS;
+	}
+}
+
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled || GameRules_GetProp("m_bInWaitingForPlayers")) return;
@@ -1019,7 +1032,7 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
 		//Clean up any boss(es) that is/are still active
-		if (g_clientBoss[iClient].IsValid())
+		if (g_clientBoss[iClient].IsValid)
 			g_clientBoss[iClient].Destroy();
 		
 		Client_ResetFlags(iClient);
@@ -1114,7 +1127,7 @@ public Action Event_RoundArenaStart(Event event, const char[] sName, bool bDontB
 		{
 			if (!IsClientInGame(iClient)) continue;
 			if (GetClientTeam(iClient) <= 1) continue;
-			if (!g_clientBoss[iClient].IsValid()) continue;
+			if (!g_clientBoss[iClient].IsValid) continue;
 			
 			g_clientBoss[iClient].Spawn();
 			g_clientBoss[iClient].iHealth = g_clientBoss[iClient].iMaxHealth;
@@ -1137,14 +1150,14 @@ public Action Event_RoundArenaStart(Event event, const char[] sName, bool bDontB
 		
 		PrintCenterText(iClient, sBossesAnnouncement);
 		
-		if (!g_clientBoss[iClient].IsValid())
+		if (!g_clientBoss[iClient].IsValid)
 		{
 			Client_ApplyEffects(iClient);
 		}
 	}
 	
 	int iClient = GetClientOfUserId(g_iUserActiveBoss);
-	if (0 < iClient <= MaxClients && IsClientInGame(iClient) && g_clientBoss[iClient].IsValid())
+	if (0 < iClient <= MaxClients && IsClientInGame(iClient) && g_clientBoss[iClient].IsValid)
 	{
 		float flMusicTime, flInitDelay;
 		g_clientBoss[iClient].GetMusicInfo(g_sBossMusic, sizeof(g_sBossMusic), flMusicTime, flInitDelay);
@@ -1190,7 +1203,7 @@ public Action Event_RoundEnd(Event event, const char[] sName, bool bDontBroadcas
 	{
 		if (0 < iMainBoss <= MaxClients && IsClientInGame(iMainBoss))// Play our win line
 		{
-			if (g_clientBoss[iMainBoss].IsValid())
+			if (g_clientBoss[iMainBoss].IsValid)
 			{
 				char sSound[255];
 				g_clientBoss[iMainBoss].GetWinSound(sSound, sizeof(sSound));
@@ -1203,7 +1216,7 @@ public Action Event_RoundEnd(Event event, const char[] sName, bool bDontBroadcas
 	{
 		if (0 < iMainBoss <= MaxClients && IsClientInGame(iMainBoss))//Play our lose line
 		{
-			if (g_clientBoss[iMainBoss].IsValid())
+			if (g_clientBoss[iMainBoss].IsValid)
 			{
 				char sSound[255];
 				g_clientBoss[iMainBoss].GetLoseSound(sSound, sizeof(sSound));
@@ -1310,7 +1323,7 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	Client_Spawn(iClient);
 	
 	// Player spawned, if they are a boss, call their spawn function
-	if (g_clientBoss[iClient].IsValid())
+	if (g_clientBoss[iClient].IsValid)
 		g_clientBoss[iClient].Spawn();
 }
 
@@ -1389,11 +1402,11 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam)
-			if (!g_clientBoss[i].IsValid() && !Client_HasFlag(i, VSH_ZOMBIE))
+			if (!g_clientBoss[i].IsValid && !Client_HasFlag(i, VSH_ZOMBIE))
 				iLastAlive++;
 	}
 	
-	if (!Client_HasFlag(iVictim, VSH_ZOMBIE) && !(g_clientBoss[iVictim].IsValid() && g_clientBoss[iVictim].IsMinion) && !bDeadRingered)
+	if (!Client_HasFlag(iVictim, VSH_ZOMBIE) && !(g_clientBoss[iVictim].IsValid && g_clientBoss[iVictim].IsMinion) && !bDeadRingered)
 	{
 		if (0 < iLastAlive <= 4)
 		{
@@ -1404,7 +1417,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 		{
 			for (int i = 1; i <= MaxClients; i++)
 			{
-				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid())
+				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid)
 					TF2_AddCondition(i, TFCond_Buffed, -1.0);
 			}
 		}
@@ -1413,7 +1426,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 			// Find the last one alive and crit them
 			for (int i = 1; i <= MaxClients; i++)
 			{
-				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid())
+				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid)
 				{
 					TF2_AddCondition(i, TFCond_CritOnDamage, -1.0);
 					break;
@@ -1426,19 +1439,19 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 			// Kill any zombies that are still alive
 			for (int i = 1; i <= MaxClients; i++)
 			{
-				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !g_clientBoss[i].IsValid())
+				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !g_clientBoss[i].IsValid)
 					SDKHooks_TakeDamage(i, iTrigger, iTrigger, 99999999.0, DMG_GENERIC|DMG_PREVENT_PHYSICS_FORCE);
 			}
 		}
 	}
 	
-	if (g_clientBoss[iVictim].IsValid())
+	if (g_clientBoss[iVictim].IsValid)
 		g_clientBoss[iVictim].OnDeath(event);
 	
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
 	if (0 < iAttacker <= MaxClients && GetClientTeam(iAttacker) > 1)
 	{
-		if (g_clientBoss[iAttacker].IsValid())
+		if (g_clientBoss[iAttacker].IsValid)
 			g_clientBoss[iAttacker].OnPlayerKilled(iVictim, event);
 		
 		int iMainBoss = GetClientOfUserId(g_iUserActiveBoss);
@@ -1447,7 +1460,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 		{
 			if (0 < iMainBoss <= MaxClients && IsClientInGame(iMainBoss) && iAttacker == iMainBoss)// Last man standing, play the voice line
 			{
-				if (g_clientBoss[iMainBoss].IsValid())
+				if (g_clientBoss[iMainBoss].IsValid)
 				{
 					char sSound[255];
 					g_clientBoss[iMainBoss].GetLastManSound(sSound, sizeof(sSound));
@@ -1456,7 +1469,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 				}
 			}
 		}
-		else if ((GetRandomInt(0, 1)) && !g_clientBoss[iVictim].IsValid() && iVictim != iAttacker && iLastAlive > 0 && g_clientBoss[iAttacker].IsValid())
+		else if ((GetRandomInt(0, 1)) && !g_clientBoss[iVictim].IsValid && iVictim != iAttacker && iLastAlive > 0 && g_clientBoss[iAttacker].IsValid)
 		{
 			char sSound[255];
 			g_clientBoss[iAttacker].GetClassKillSound(sSound, sizeof(sSound), TF2_GetPlayerClass(iVictim));
@@ -1471,14 +1484,13 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	Client_RemoveFlag(iVictim, VSH_ZOMBIE);
 	Client_RemoveFlag(iVictim, VSH_ALLOWED_TO_SPAWN_BOSS_TEAM);
 	
-	if (g_clientBoss[iVictim].IsValid())
+	if (g_clientBoss[iVictim].IsValid)
 	{
 		// Destroy boss object so they cannot respawn
 		// Which also allow other bosses to ressurect them as minions
 		if (VSH_SpecialRound(SPECIALROUND_CLASHOFBOSSES) || g_clientBoss[iVictim].IsMinion)
 		{
-			g_clientBoss[iVictim].Destroy();
-			g_clientBoss[iVictim] = INVALID_BOSS;
+			RequestFrame(Frame_DestroyBoss, event.GetInt("userid"));
 		}
 	}
 	
@@ -1493,7 +1505,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1) return;
 	
-	if (!g_clientBoss[iClient].IsValid())
+	if (!g_clientBoss[iClient].IsValid)
 	{
 		/*Balance or restrict specific weapons*/
 		int iWeapon = -1;
@@ -1607,12 +1619,12 @@ public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadc
 	
 	int iDamageAmount = event.GetInt("damageamount");
 	
-	if (g_clientBoss[iClient].IsValid())
+	if (g_clientBoss[iClient].IsValid)
 	{
 		int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
 		if (iAttacker != 0 && iAttacker != iClient)
 			g_clientBoss[iClient].iRageDamage += iDamageAmount;
-		if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && GetClientTeam(iAttacker) > 1 && !g_clientBoss[iAttacker].IsValid())
+		if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && GetClientTeam(iAttacker) > 1 && !g_clientBoss[iAttacker].IsValid)
 		{
 			g_iPlayerDamage[iAttacker] += iDamageAmount;
 			int iAttackTeam = GetClientTeam(iAttacker);
@@ -1660,7 +1672,7 @@ public Action Event_BuffBannerDeployed(Event event, const char[] sName, bool bDo
 	if (g_iTotalRoundPlayed <= 0) return;
 	
 	int iClient = GetClientOfUserId(event.GetInt("buff_owner"));
-	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1 || g_clientBoss[iClient].IsValid()) return;
+	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1 || g_clientBoss[iClient].IsValid) return;
 	
 	int iBannerType = event.GetInt("buff_type");
 	switch (iBannerType)
@@ -1755,7 +1767,7 @@ public Action Event_UberDeployed(Event event, const char[] sName, bool bDontBroa
 	if (g_iTotalRoundPlayed <= 0) return;
 	
 	int iClient = GetClientOfUserId(GetEventInt(event, "userid"));
-	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1 || g_clientBoss[iClient].IsValid()) return;
+	if (iClient <= 0 || iClient > MaxClients || GetClientTeam(iClient) <= 1 || g_clientBoss[iClient].IsValid) return;
 	
 	int iSecondaryWep = GetPlayerWeaponSlot(iClient, WeaponSlot_Secondary);
 	if (iSecondaryWep > MaxClients)
@@ -1816,7 +1828,7 @@ public Action Timer_MusicInitialDelay(Handle hTimer, CBaseBoss boss)
 	if (g_hTimerBossMusic != hTimer)
 		return Plugin_Stop;
 	
-	if (!boss.IsValid())
+	if (!boss.IsValid)
 	{
 		g_hTimerBossMusic = null;
 		return Plugin_Stop;
@@ -1845,7 +1857,7 @@ public Action Timer_Music(Handle hTimer, CBaseBoss boss)
 {
 	if (g_hTimerBossMusic != hTimer)
 		return Plugin_Stop;
-	if (!boss.IsValid())
+	if (!boss.IsValid)
 	{
 		g_hTimerBossMusic = null;
 		return Plugin_Stop;
@@ -1904,7 +1916,7 @@ public void OnClientCookiesCached(int iClient)
 
 public void OnClientDisconnect(int iClient)
 {
-	if (g_clientBoss[iClient].IsValid())
+	if (g_clientBoss[iClient].IsValid)
 		g_clientBoss[iClient].Destroy();
 	
 	if (GetClientOfUserId(g_iUserActiveBoss) == iClient)
@@ -1913,7 +1925,7 @@ public void OnClientDisconnect(int iClient)
 		{
 			if (IsClientInGame(i) && GetClientTeam(i) > 1)
 			{
-				if (g_clientBoss[i].IsValid())
+				if (g_clientBoss[i].IsValid)
 				{
 					g_iUserActiveBoss = GetClientUserId(i);
 					break;
@@ -2147,7 +2159,7 @@ public Action OnPlayerRunCmd(int iClient,int &buttons,int &impulse, float vel[3]
 public Action Boss_OnTouch(int iEntity, int iToucher)
 {
 	//Don't allow bosses to pick up health kit or ammo pack
-	if (iToucher >= 1 && iToucher <= MaxClients && IsClientInGame(iToucher) && IsPlayerAlive(iToucher) && g_clientBoss[iToucher].IsValid())
+	if (iToucher >= 1 && iToucher <= MaxClients && IsClientInGame(iToucher) && IsPlayerAlive(iToucher) && g_clientBoss[iToucher].IsValid)
 		return Plugin_Handled;
 	return Plugin_Continue;
 }
@@ -2187,7 +2199,7 @@ public Action CWeaponMedigun_IsAllowedToHealTarget(int iMedigun, int iHealTarget
 
 public Action CTFPlayer_GetClassEyeHeight(int iClient, float vecSetPos[3])
 {
-	if (g_clientBoss[iClient].IsValid())
+	if (g_clientBoss[iClient].IsValid)
 	{
 		g_clientBoss[iClient].GetEyeHeigth(vecSetPos);
 		return Plugin_Changed;
@@ -2207,7 +2219,7 @@ public void TF2_OnConditionAdded(int iClient, TFCond cond)
 
 public void TF2_OnConditionRemoved(int iClient, TFCond cond)
 {
-	if (cond == TFCond_CritCola && !g_clientBoss[iClient].IsValid())
+	if (cond == TFCond_CritCola && !g_clientBoss[iClient].IsValid)
 	{
 		int iSecondaryWep = GetPlayerWeaponSlot(iClient, WeaponSlot_Secondary);
 		if (iSecondaryWep > MaxClients)
@@ -2222,7 +2234,7 @@ public void TF2_OnConditionRemoved(int iClient, TFCond cond)
 
 public Action TF2_CalcIsAttackCritical(int iClient, int iWeapon, char[] sWepClassName, bool &bResult)
 {
-	if (!g_clientBoss[iClient].IsValid())
+	if (!g_clientBoss[iClient].IsValid)
 	{
 		if (strncmp(sWepClassName, "tf_weapon_rocketlauncher", 24) == 0)
 		{
@@ -2234,7 +2246,7 @@ public Action TF2_CalcIsAttackCritical(int iClient, int iWeapon, char[] sWepClas
 			int iCollisionEntity = TR_GetEntityIndex(hTrace);
 			delete hTrace;
 			
-			if (0 < iCollisionEntity <= MaxClients && IsClientInGame(iCollisionEntity) && g_clientBoss[iCollisionEntity].IsValid())
+			if (0 < iCollisionEntity <= MaxClients && IsClientInGame(iCollisionEntity) && g_clientBoss[iCollisionEntity].IsValid)
 			{
 				bResult = true;
 				return Plugin_Changed;
@@ -2254,7 +2266,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 {
 	if (!g_bEnabled) return Plugin_Continue;
 
-	if (g_clientBoss[client].IsValid() && strncmp(classname, "tf_wearable", 11) == 0)
+	if (g_clientBoss[client].IsValid && strncmp(classname, "tf_wearable", 11) == 0)
 		if (!g_clientBoss[client].IsCosmeticBlocked(iItemDefinitionIndex))
 			return Plugin_Handled;
 	return Plugin_Continue;
@@ -2264,7 +2276,7 @@ public Action NormalSoundHook(int clients[MAXPLAYERS], int &numClients, char sam
 {
 	if (0 < entity <= MaxClients && IsClientInGame(entity))
 	{
-		if (g_clientBoss[entity].IsValid())
+		if (g_clientBoss[entity].IsValid)
 		{
 			return g_clientBoss[entity].OnSoundPlayed(clients, numClients, sample, channel, volume, level, pitch, flags, soundEntry, seed);
 		}

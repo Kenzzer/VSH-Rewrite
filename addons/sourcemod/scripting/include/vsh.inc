@@ -14,74 +14,90 @@ enum
 
 methodmap VSHBoss
 {
-	/*property int Index
+	property int Index
 	{
-		public native get();
+		public get()
+		{
+			return view_as<int>(this);
+		}
 	}
 	
 	property float flSpeed
 	{
 		public native get();
+		public native set(float val);
 	}
 	
 	property float flFallDamageCap
 	{
 		public native get();
+		public native set(float val);
 	}
 	
 	property float flBackStabDamage
 	{
 		public native get();
+		public native set(float val);
 	}
 	
 	property float flEnvDamageCap
 	{
 		public native get();
+		public native set(float val);
 	}
 	
 	property float flSpeedMult
 	{
 		public native get();
+		public native set(float val);
 	}
 
 	property float flGlowTime
 	{
 		public native get();
+		public native set(float val);
 	}
 	
 	property float flRageLastTime
 	{
 		public native get();
+		public native set(float val);
 	}
-	*/
+	
 	property int iMaxHealth
 	{
 		public native get();
+		public native set(int val);
 	}
 	
 	property int iHealth
 	{
 		public native get();
+		public native set(int val);
 	}
-	/*
+	
 	property int iMaxRageDamage
 	{
 		public native get();
+		public native set(int val);
 	}
 	
 	property int iRageDamage
 	{
 		public native get();
+		public native set(int val);
 	}
-	*/
+	
 	property bool IsMinion
 	{
 		public native get();
+		public native set(bool val);
 	}
 	
 	property bool IsValid
 	{
 		public native get();
+		public native set(bool val);
 	}
 }
 

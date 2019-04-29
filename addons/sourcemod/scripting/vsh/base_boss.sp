@@ -1,3 +1,21 @@
+#define BOSS_PROPERTY(%1)	public int Native_CBaseBoss%1Set(Handle plugin, int numParams) \
+{ \
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1)); \
+	boss.%1 = view_as<any>(GetNativeCell(2)); \
+} \
+public int Native_CBaseBoss%1Get(Handle plugin, int numParams) \
+{ \
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1)); \
+	return view_as<int>(boss.%1); \
+}
+
+
+#define BOSS_PROPERTY_REGISTER(%1,%2) char s_%1_[64]; \
+Format(s_%1_, sizeof(s_%1_), "CBaseBoss.%s.set", %2); \
+CreateNative(s_%1_, Native_CBaseBoss%1Set); \
+Format(s_%1_, sizeof(s_%1_), "CBaseBoss.%s.get", %2); \
+CreateNative(s_%1_, Native_CBaseBoss%1Get);
+
 static char g_sClientBossType[TF_MAXPLAYERS+1][64];
 static char g_sClientRageMusic[TF_MAXPLAYERS+1][255];
 
@@ -122,6 +140,10 @@ methodmap CBaseBoss
 		{
 			return g_flClientBossRageLastTime[this.Index];
 		}
+		public set(float val)
+		{
+			g_flClientBossRageLastTime[this.Index] = val;
+		}
 	}
 	
 	property int iMaxHealth
@@ -218,6 +240,18 @@ methodmap CBaseBoss
 		public set(bool val)
 		{
 			g_bClientBossIsMinion[this.Index] = val;
+		}
+	}
+	
+	property bool IsValid
+	{
+		public get()
+		{
+			int client = this.Index;
+			return (0 < client <= MaxClients && IsClientInGame(client) && g_bClientBossActive[client]);
+		}
+		public set(bool val)
+		{
 		}
 	}
 	
@@ -356,12 +390,6 @@ methodmap CBaseBoss
 					g_iClientBossAbility[this.Index][i] = INVALID_ABILITY;
 			}
 		}
-	}
-	
-	public bool IsValid()
-	{
-		int client = this.Index;
-		return (0 < client <= MaxClients && IsClientInGame(client) && g_bClientBossActive[client]);
 	}
 	
 	public void Think()
@@ -714,7 +742,7 @@ methodmap CBaseBoss
 	
 	public void OnRage(bool bSuperRageEx)
 	{
-		g_flClientBossRageLastTime[this.Index] = GetGameTime();
+		this.flRageLastTime = GetGameTime();
 		
 		int iNumRageRemove = RoundToFloor(float(this.iRageDamage)/float(this.iMaxRageDamage));
 		bool bSuperRage = (iNumRageRemove == 2);
@@ -1078,11 +1106,40 @@ methodmap CBaseBoss
 		SetVariantString("ParticleEffectStop");
 		AcceptEntityInput(this.Index, "DispatchEffect");
 	}
+	
+	public static void RegisterNatives()
+	{
+		BOSS_PROPERTY_REGISTER(flSpeed, "flSpeed")
+		BOSS_PROPERTY_REGISTER(flFallDamageCap, "flFallDamageCap")
+		BOSS_PROPERTY_REGISTER(flBackStabDamage, "flBackStabDamage")
+		BOSS_PROPERTY_REGISTER(flEnvDamageCap, "flEnvDamageCap")
+		BOSS_PROPERTY_REGISTER(flGlowTime, "flGlowTime")
+		BOSS_PROPERTY_REGISTER(flRageLastTime, "flRageLastTime")
+		BOSS_PROPERTY_REGISTER(iMaxHealth, "iMaxHealth")
+		BOSS_PROPERTY_REGISTER(iHealth, "iHealth")
+		BOSS_PROPERTY_REGISTER(iMaxRageDamage, "iMaxRageDamage")
+		BOSS_PROPERTY_REGISTER(iRageDamage, "iRageDamage")
+		BOSS_PROPERTY_REGISTER(IsMinion, "IsMinion")
+		BOSS_PROPERTY_REGISTER(IsValid, "IsValid")
+	}
 }
+
+BOSS_PROPERTY(flSpeed)
+BOSS_PROPERTY(flFallDamageCap)
+BOSS_PROPERTY(flBackStabDamage)
+BOSS_PROPERTY(flEnvDamageCap)
+BOSS_PROPERTY(flGlowTime)
+BOSS_PROPERTY(flRageLastTime)
+BOSS_PROPERTY(iMaxHealth)
+BOSS_PROPERTY(iHealth)
+BOSS_PROPERTY(iMaxRageDamage)
+BOSS_PROPERTY(iRageDamage)
+BOSS_PROPERTY(IsMinion)
+BOSS_PROPERTY(IsValid)
 
 void Frame_BossRageMusic(CBaseBoss boss)
 {
-	if (!boss.IsValid())
+	if (!boss.IsValid)
 		return;
 	if (strcmp(g_sClientRageMusic[boss.Index], "") == 0)
 		return;
@@ -1096,7 +1153,7 @@ void Frame_BossRageMusic(CBaseBoss boss)
 
 public Action Timer_ApplyBossModel(Handle hTimer, CBaseBoss boss)
 {
-	if (!boss.IsValid())
+	if (!boss.IsValid)
 	{
 		g_hClientBossModelTimer[boss.Index] = null;
 		return Plugin_Stop;
@@ -1119,7 +1176,7 @@ public Action Timer_ApplyBossModel(Handle hTimer, CBaseBoss boss)
 
 public Action Timer_BossRageMusicFade(Handle hTimer, CBaseBoss boss)
 {
-	if (!boss.IsValid())
+	if (!boss.IsValid)
 		return;
 	if (hTimer != g_hClientBossRageMusicFadeTime[boss.Index])
 		return;

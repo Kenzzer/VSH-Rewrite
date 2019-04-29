@@ -245,7 +245,7 @@ void SpecialRound_Activate(int iSpecialRound)
 					int iPickedPlayer = pickList.Get(GetRandomInt(0,iLength-1));
 					Client_AddFlag(iPickedPlayer, VSH_ALLOWED_TO_SPAWN_BOSS_TEAM);
 					
-					if (g_clientBoss[iPickedPlayer].IsValid())
+					if (g_clientBoss[iPickedPlayer].IsValid)
 						g_clientBoss[iPickedPlayer].Destroy();
 					g_clientBoss[iPickedPlayer] = CBaseBoss(iPickedPlayer, g_strBossesType[GetRandomInt(0, sizeof(g_strBossesType)-1)]);
 					
@@ -431,7 +431,7 @@ public Action Timer_SpecialRoundYetiModel(Handle hTimer, int userid)
 	
 	if (!VSH_SpecialRound(SPECIALROUND_YETISVSHALE)) return Plugin_Stop;
 	
-	if (g_clientBoss[iClient].IsValid()) return Plugin_Stop;
+	if (g_clientBoss[iClient].IsValid) return Plugin_Stop;
 	
 	if (IsPlayerAlive(iClient))
 	{

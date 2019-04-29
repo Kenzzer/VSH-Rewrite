@@ -130,7 +130,7 @@ void Client_Disconnect(int iClient)
 
 public MRESReturn Client_GetMaxHealth(int iClient, Handle hReturn)
 {
-	if (g_clientBoss[iClient].IsValid())
+	if (g_clientBoss[iClient].IsValid)
 	{
 		DHookSetReturn(hReturn, g_clientBoss[iClient].iMaxHealth);
 		return MRES_Supercede;
@@ -152,7 +152,7 @@ public void Client_OnThink(int iClient)
 	if (!g_bEnabled) return;
 	if (g_iTotalRoundPlayed <= 0) return;
 	
-	if (g_clientBoss[iClient].IsValid())
+	if (g_clientBoss[iClient].IsValid)
 		g_clientBoss[iClient].Think();
 	else
 	{
@@ -231,7 +231,7 @@ public void Client_OnThink(int iClient)
 		{
 			int iHealTarget = GetEntPropEnt(iSecondaryWep, Prop_Send, "m_hHealingTarget");
 			// Apply Uber & Crit on heal on medic's patient except if they are a boss or a zombie
-			if (0 < iHealTarget <= MaxClients && IsClientInGame(iHealTarget) && !g_clientBoss[iHealTarget].IsValid() && !Client_HasFlag(iHealTarget, VSH_ZOMBIE))
+			if (0 < iHealTarget <= MaxClients && IsClientInGame(iHealTarget) && !g_clientBoss[iHealTarget].IsValid && !Client_HasFlag(iHealTarget, VSH_ZOMBIE))
 			{
 				TFClassType healTargetClass = TF2_GetPlayerClass(iHealTarget);
 				
@@ -328,7 +328,7 @@ public void Client_OnThink(int iClient)
 			if (!IsPlayerAlive(iClient))
 			{
 				int iOberserTarget = GetEntPropEnt(iClient, Prop_Send, "m_hObserverTarget");
-				if (iOberserTarget != iClient && 0 < iOberserTarget <= MaxClients && IsClientInGame(iOberserTarget) && !g_clientBoss[iOberserTarget].IsValid())
+				if (iOberserTarget != iClient && 0 < iOberserTarget <= MaxClients && IsClientInGame(iOberserTarget) && !g_clientBoss[iOberserTarget].IsValid)
 					iTarget = iOberserTarget;
 			}
 			
@@ -361,7 +361,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 	// is valid victim
 	if (0 < victim <= MaxClients && IsClientInGame(victim) && GetClientTeam(victim) > 1)
 	{
-		bool bIsVictimBoss = g_clientBoss[victim].IsValid();
+		bool bIsVictimBoss = g_clientBoss[victim].IsValid;
 		bool bVictimUbered = TF2_IsUbercharged(victim);
 		if (bIsVictimBoss)
 			finalAction = g_clientBoss[victim].OnTakeDamage(attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom);
@@ -369,7 +369,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 		// is valid attacker
 		if (0 < attacker <= MaxClients && IsClientInGame(attacker))
 		{
-			if (!g_clientBoss[attacker].IsValid()) // Regular players
+			if (!g_clientBoss[attacker].IsValid) // Regular players
 			{
 				if (bIsVictimBoss && !g_clientBoss[victim].IsMinion)
 				{
@@ -595,7 +595,7 @@ public Action Client_OnTakeDamage(int victim, int &attacker, int &inflictor, flo
 							ArrayList aHealer = new ArrayList();
 							for (int i = 1; i <= MaxClients; i++)
 							{
-								if (IsClientInGame(i) && IsPlayerAlive(i) && !g_clientBoss[i].IsValid())
+								if (IsClientInGame(i) && IsPlayerAlive(i) && !g_clientBoss[i].IsValid)
 								{
 									int iMedigun = GetPlayerWeaponSlot(i, WeaponSlot_Secondary);
 									if (iMedigun > MaxClients)
@@ -750,7 +750,7 @@ public Action Client_VoiceCommand(int iClient, const char[] sCommand, int iArgs)
 
 	if (sCmd1[0] == '0' && sCmd2[0] == '0' && IsPlayerAlive(iClient))
 	{
-		if (g_clientBoss[iClient].IsValid() && g_clientBoss[iClient].iMaxRageDamage != -1 && (g_clientBoss[iClient].iRageDamage >= g_clientBoss[iClient].iMaxRageDamage) && !TF2_IsPlayerInCondition(iClient, TFCond_Dazed))
+		if (g_clientBoss[iClient].IsValid && g_clientBoss[iClient].iMaxRageDamage != -1 && (g_clientBoss[iClient].iRageDamage >= g_clientBoss[iClient].iMaxRageDamage) && !TF2_IsPlayerInCondition(iClient, TFCond_Dazed))
 		{
 			g_clientBoss[iClient].OnRage(false);
 			return Plugin_Handled;
@@ -772,7 +772,7 @@ public Action Client_TauntCommand(int iClient, const char[] sCommand, int iArgs)
 
 	if (iClient >= 1 && iClient <= MaxClients && GetEntProp(iClient, Prop_Send, "m_hGroundEntity") != -1 && !TF2_IsPlayerInCondition(iClient, TFCond_Taunting))
 	{
-		if (g_clientBoss[iClient].IsValid())
+		if (g_clientBoss[iClient].IsValid)
 			return g_clientBoss[iClient].OnTaunt(iArgs);
 	}
 
@@ -795,7 +795,7 @@ public Action Client_JoinTeamCommand(int iClient, const char[] sCommand, int iAr
 	if (iMainBoss > 0 && iMainBoss <= MaxClients && IsClientInGame(iMainBoss))
 	{
 		if (iMainBoss == iClient) return Plugin_Handled; // Main boss cannot be allowed to switch team
-		if (g_clientBoss[iClient].IsValid()) return Plugin_Handled; // Whoever that is, a minion, a companion ... if they use a boss object while a main boss is active they cannot switch team under any circumstances
+		if (g_clientBoss[iClient].IsValid) return Plugin_Handled; // Whoever that is, a minion, a companion ... if they use a boss object while a main boss is active they cannot switch team under any circumstances
 		
 		int iBossTeam = GetClientTeam(iMainBoss);
 		if (iBossTeam > 1 && !Client_HasFlag(iMainBoss, VSH_ALLOWED_TO_SPAWN_BOSS_TEAM))
@@ -815,14 +815,14 @@ public Action Client_JoinTeamCommand(int iClient, const char[] sCommand, int iAr
 
 Action Client_OnButton(int client, int button)
 {
-	if (g_clientBoss[client].IsValid())
+	if (g_clientBoss[client].IsValid)
 		return g_clientBoss[client].OnButton(button);
 	return Plugin_Continue;
 }
 
 void Client_OnButtonPress(int client, int button)
 {
-	if (g_clientBoss[client].IsValid())
+	if (g_clientBoss[client].IsValid)
 	{
 		g_clientBoss[client].OnButtonPress(button);
 	}
@@ -873,13 +873,13 @@ void Client_OnButtonPress(int client, int button)
 
 void Client_OnButtonHold(int client, int button)
 {
-	if (g_clientBoss[client].IsValid())
+	if (g_clientBoss[client].IsValid)
 		g_clientBoss[client].OnButtonHold(button);
 }
 
 void Client_OnButtonRelease(int client, int button)
 {
-	if (g_clientBoss[client].IsValid())
+	if (g_clientBoss[client].IsValid)
 		g_clientBoss[client].OnButtonRelease(button);
 }
 
@@ -892,7 +892,7 @@ void Client_Spawn(int iClient)
 	g_hClientSpecialRoundTimer[iClient] = null;
 	g_hClientSpecialModelTimer[iClient] = null;
 	
-	if (!g_clientBoss[iClient].IsValid())
+	if (!g_clientBoss[iClient].IsValid)
 	{
 		if (Client_HasFlag(iClient, VSH_ZOMBIE))
 			g_hClientSpecialModelTimer[iClient] = CreateTimer(0.1, Timer_ApplyZombieModel, GetClientUserId(iClient), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
@@ -903,7 +903,7 @@ void Client_Spawn(int iClient)
 
 void Client_ApplyEffects(int iClient)
 {
-	if (g_clientBoss[iClient].IsValid())
+	if (g_clientBoss[iClient].IsValid)
 		return;
 	
 	// Weapon bonus

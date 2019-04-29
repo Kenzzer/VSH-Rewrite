@@ -250,7 +250,7 @@ public bool Body_ShouldCollide(int entity, int collisiongroup, int contentsmask,
 public Action BodyGlow_Transmit(int iGlow, int iClient)
 {
 	if (!Network_ClientHasSeenEntity(iClient, iGlow)) return Plugin_Continue;
-	if (g_clientBoss[iClient].IsValid() && g_clientBoss[iClient].FindAbility("CBodyEat") != INVALID_ABILITY) return Plugin_Continue;
+	if (g_clientBoss[iClient].IsValid && g_clientBoss[iClient].FindAbility("CBodyEat") != INVALID_ABILITY) return Plugin_Continue;
 	
 	return Plugin_Handled;
 }

@@ -78,7 +78,7 @@ void AFK_Think()
 			if (IsClientInGame(i) && GetClientTeam(i) > 1 && IsPlayerAlive(i))
 			{
 				// Recompute the health for bosses
-				if (g_clientBoss[i].IsValid())
+				if (g_clientBoss[i].IsValid)
 				{
 					float flRatio = float(g_clientBoss[i].iHealth)/float(g_clientBoss[i].iMaxHealth);
 					g_clientBoss[i].RecalculateMaxHealth();

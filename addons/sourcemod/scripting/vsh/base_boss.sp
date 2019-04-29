@@ -11,9 +11,9 @@ public int Native_CBaseBoss%1Get(Handle plugin, int numParams) \
 
 
 #define BOSS_PROPERTY_REGISTER(%1,%2) char s_%1_[64]; \
-Format(s_%1_, sizeof(s_%1_), "CBaseBoss.%s.set", %2); \
+Format(s_%1_, sizeof(s_%1_), "VSHBoss.%s.set", %2); \
 CreateNative(s_%1_, Native_CBaseBoss%1Set); \
-Format(s_%1_, sizeof(s_%1_), "CBaseBoss.%s.get", %2); \
+Format(s_%1_, sizeof(s_%1_), "VSHBoss.%s.get", %2); \
 CreateNative(s_%1_, Native_CBaseBoss%1Get);
 
 static char g_sClientBossType[TF_MAXPLAYERS+1][64];
@@ -1121,8 +1121,12 @@ methodmap CBaseBoss
 		BOSS_PROPERTY_REGISTER(iRageDamage, "iRageDamage")
 		BOSS_PROPERTY_REGISTER(IsMinion, "IsMinion")
 		BOSS_PROPERTY_REGISTER(IsValid, "IsValid")
+		
+		CreateNative("VSHBoss.VSHBoss", Native_CBaseBossVSHBoss);
+		CreateNative("VSHBoss.GetType", Native_CBaseBossGetType);
 	}
 }
+CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 
 BOSS_PROPERTY(flSpeed)
 BOSS_PROPERTY(flFallDamageCap)
@@ -1136,6 +1140,16 @@ BOSS_PROPERTY(iMaxRageDamage)
 BOSS_PROPERTY(iRageDamage)
 BOSS_PROPERTY(IsMinion)
 BOSS_PROPERTY(IsValid)
+
+public int Native_CBaseBossVSHBoss(Handle plugin, int numParams)
+{
+	return view_as<int>(g_clientBoss[GetNativeCell(1)]);
+}
+
+public int Native_CBaseBossGetType(Handle plugin, int numParams)
+{
+	SetNativeString(2, g_sClientBossType[GetNativeCell(1)], GetNativeCell(3));
+}
 
 void Frame_BossRageMusic(CBaseBoss boss)
 {

@@ -361,7 +361,6 @@ Handle g_hPlayerPreferences;
 Config config;
 #include "vsh/base_ability.sp"
 #include "vsh/base_boss.sp"
-CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 #include "vsh/client.sp"
 #include "vsh/death_rings.sp"
 
@@ -397,6 +396,7 @@ CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	RegPluginLibrary("vsh");
 	CBaseBoss.RegisterNatives();
 	return APLRes_Success;
 }

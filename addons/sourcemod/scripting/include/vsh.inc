@@ -99,9 +99,13 @@ methodmap VSHBoss
 		public native get();
 		public native set(bool val);
 	}
+	
+	public native void GetType(char[] sBuffer, int iLen);
 }
 
-public SharedPlugin __pl_vsh_rewrite = 
+const VSHBoss INVALID_VSH_BOSS = view_as<VSHBoss>(-1);
+
+public SharedPlugin __pl_vsh = 
 {
 	name = "vsh",
 	file = "vsh.smx",
@@ -113,7 +117,34 @@ public SharedPlugin __pl_vsh_rewrite =
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_vsh_rewrite_SetNTVOptional()
+public __pl_vsh_SetNTVOptional()
 {
+	MarkNativeAsOptional("VSHBoss.flSpeed.set");
+	MarkNativeAsOptional("VSHBoss.flSpeed.get");
+	MarkNativeAsOptional("VSHBoss.flFallDamageCap.set");
+	MarkNativeAsOptional("VSHBoss.flFallDamageCap.get");
+	MarkNativeAsOptional("VSHBoss.flBackStabDamage.set");
+	MarkNativeAsOptional("VSHBoss.flBackStabDamage.get");
+	MarkNativeAsOptional("VSHBoss.flEnvDamageCap.set");
+	MarkNativeAsOptional("VSHBoss.flEnvDamageCap.get");
+	MarkNativeAsOptional("VSHBoss.flSpeedMult.set");
+	MarkNativeAsOptional("VSHBoss.flSpeedMult.get");
+	MarkNativeAsOptional("VSHBoss.flGlowTime.set");
+	MarkNativeAsOptional("VSHBoss.flGlowTime.get");
+	MarkNativeAsOptional("VSHBoss.flRageLastTime.set");
+	MarkNativeAsOptional("VSHBoss.flRageLastTime.get");
+	MarkNativeAsOptional("VSHBoss.iMaxHealth.set");
+	MarkNativeAsOptional("VSHBoss.iMaxHealth.get");
+	MarkNativeAsOptional("VSHBoss.iHealth.set");
+	MarkNativeAsOptional("VSHBoss.iHealth.get");
+	MarkNativeAsOptional("VSHBoss.iMaxRageDamage.set");
+	MarkNativeAsOptional("VSHBoss.iMaxRageDamage.get");
+	MarkNativeAsOptional("VSHBoss.iRageDamage.set");
+	MarkNativeAsOptional("VSHBoss.iRageDamage.get");
+	MarkNativeAsOptional("VSHBoss.IsMinion.set");
+	MarkNativeAsOptional("VSHBoss.IsMinion.get");
+	MarkNativeAsOptional("VSHBoss.IsValid.set");
+	MarkNativeAsOptional("VSHBoss.IsValid.get");
+	MarkNativeAsOptional("VSHBoss.GetType");
 }
 #endif

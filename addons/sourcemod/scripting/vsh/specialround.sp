@@ -171,7 +171,7 @@ ArrayList SpecialRound_GetList()
 		int iOpositeTeam = (iBossTeam == TFTeam_Red) ? TFTeam_Blue : TFTeam_Red;
 		int numPlayers = GetTeamClientCount(iOpositeTeam);
 		if (numPlayers > 2)
-			list.Push(SPECIALROUND_DOUBLETROUBLE);
+			list.Push(SPECIALROUND_DOUBLEBOSSES);
 		if (numPlayers > 10)
 		{
 			list.Push(SPECIALROUND_CLASHOFBOSSES);
@@ -223,7 +223,7 @@ void SpecialRound_Activate(int iSpecialRound)
 				}
 			}
 		}
-		case SPECIALROUND_DOUBLETROUBLE:
+		case SPECIALROUND_DOUBLEBOSSES:
 		{
 			ArrayList pickList = new ArrayList();
 			int iMainBoss = GetClientOfUserId(g_iUserActiveBoss);

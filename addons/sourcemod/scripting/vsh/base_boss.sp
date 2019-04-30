@@ -305,7 +305,7 @@ methodmap CBaseBoss
 		}
 		
 		int iCalculatedHealth = this.GetBaseHealth() + this.GetHealthPerPlayer()*iEnemy;
-		if (VSH_SpecialRound(SPECIALROUND_DOUBLETROUBLE))
+		if (VSH_SpecialRound(SPECIALROUND_DOUBLEBOSSES))
 			iCalculatedHealth /= 3;
 		else if (VSH_SpecialRound(SPECIALROUND_CLASHOFBOSSES))
 			iCalculatedHealth /= 2;

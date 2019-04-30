@@ -6,7 +6,7 @@
 enum
 {
 	SPECIALROUND_YETISVSHALE = 1,
-	SPECIALROUND_DOUBLETROUBLE,
+	SPECIALROUND_DOUBLEBOSSES,
 	SPECIALROUND_CLASHOFBOSSES,
 	SPECIALROUND_SENTRYBUSTERS,
 	SPECIALROUND_MAXROUNDS
@@ -101,6 +101,7 @@ methodmap VSHBoss
 	}
 	
 	public native void GetType(char[] sBuffer, int iLen);
+	public native VSHBoss();
 }
 
 const VSHBoss INVALID_VSH_BOSS = view_as<VSHBoss>(-1);
@@ -146,5 +147,6 @@ public __pl_vsh_SetNTVOptional()
 	MarkNativeAsOptional("VSHBoss.IsValid.set");
 	MarkNativeAsOptional("VSHBoss.IsValid.get");
 	MarkNativeAsOptional("VSHBoss.GetType");
+	MarkNativeAsOptional("VSHBoss.VSHBoss");
 }
 #endif

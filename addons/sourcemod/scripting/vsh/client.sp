@@ -245,7 +245,7 @@ public void Client_OnThink(int iClient)
 			}
 		}
 		
-		if (class == TFClass_Spy && iActiveWep == iPrimaryWep)
+		if (class == TFClass_Spy && iActiveWep == iPrimaryWep && !TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
 			TF2_AddCondition(iClient, TFCond_Buffed, 0.1);
 		else if(class == TFClass_Medic && iActiveWep == iPrimaryWep)
 			TF2_AddCondition(iClient, TFCond_CritOnDamage, 0.1);

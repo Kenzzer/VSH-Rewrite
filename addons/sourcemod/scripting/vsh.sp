@@ -1426,7 +1426,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 			// Find the last one alive and crit them
 			for (int i = 1; i <= MaxClients; i++)
 			{
-				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid && TF2_IsPlayerInCondition(i, TFCond_Cloaked))
+				if (IsClientInGame(i) && IsPlayerAlive(i) && i != iVictim && GetClientTeam(i) == iVictimTeam && !Client_HasFlag(i, VSH_ZOMBIE) && !g_clientBoss[i].IsValid && !TF2_IsPlayerInCondition(i, TFCond_Cloaked))
 				{
 					TF2_AddCondition(i, TFCond_CritOnDamage, -1.0);
 					break;

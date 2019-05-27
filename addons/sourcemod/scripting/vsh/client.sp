@@ -211,7 +211,7 @@ public void Client_OnThink(int iClient)
 		//if (iMeleeWep >= 0) GetEdictClassname(iMeleeWep, weaponMeleeClass, sizeof(weaponMeleeClass));
 	
 		// Baby Face's Blaster
-		if (iPrimaryWep > MaxClients && strcmp(weaponPrimaryClass, "tf_weapon_pep_brawler_master") == 0)
+		if (iPrimaryWep > MaxClients && strcmp(weaponPrimaryClass, "tf_weapon_pep_brawler_blaster") == 0)
 		{
 			float flMaxHype = tf_scout_hype_pep_max.FloatValue; // max meter
 			float flDrain = flMaxHype * 0.07; // 7% of max meter

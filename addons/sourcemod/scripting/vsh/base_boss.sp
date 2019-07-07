@@ -1101,3 +1101,32 @@ stock int CreateWeapon(int client, char[] sName, int index, int level, int qual,
 	
 	return entity;
 }
+
+stock int CreateAndEquipWearable(int client, int modelIndex)
+{
+	Handle hWearable = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
+
+	if (hWearable == INVALID_HANDLE)
+	return -1;
+
+	TF2Items_SetClassname(hWearable, "tf_wearable");
+	TF2Items_SetItemIndex(hWearable, 5023);
+	TF2Items_SetLevel(hWearable, 50);
+	TF2Items_SetQuality(hWearable, 6);
+
+	int iWearable = TF2Items_GiveNamedItem(client, hWearable);
+	delete hWearable;
+	if (IsValidEdict(iWearable))
+	{
+		SetEntProp(iWearable, Prop_Send, "m_bValidatedAttachedEntity", true);
+		if (g_hSDKEquipWearable != INVALID_HANDLE)
+		{
+			SDKCall(g_hSDKEquipWearable, client, iWearable);
+			SetEntProp(iWearable, Prop_Send, "m_bValidatedAttachedEntity", true);
+			SetEntProp(iWearable, Prop_Send, "m_nModelIndexOverrides", modelIndex);
+			return iWearable;
+		}
+	}
+
+	return -1;
+}

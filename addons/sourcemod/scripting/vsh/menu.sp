@@ -8,6 +8,7 @@ Handle g_hMenuClassHelp;
 
 Handle g_hBossSelect;
 Handle g_hBossArrow;
+Handle g_hBossMusic;
 Handle g_hRevivalSelect;
 
 void Menus_Init()
@@ -44,12 +45,12 @@ void Menus_Init()
 	g_hMenuCredits = CreateMenu(Menu_Credits);
 	
 	Format(buffer, sizeof(buffer), "Credits\n \n");
-	StrCat(buffer, sizeof(buffer), "Coder: Benoist3012\n");
+	StrCat(buffer, sizeof(buffer), "Coder: Kenzzer & Frisseramune\n");
 	StrCat(buffer, sizeof(buffer), "\n \n");
 	StrCat(buffer, sizeof(buffer), "Eggman - The creator of the first VSH\n");
 	StrCat(buffer, sizeof(buffer), "Alex Turtle & Chillax - Great test subjects!\n");
-	StrCat(buffer, sizeof(buffer), "Dispenzor's Fun Servers - Host community!\n");
-	StrCat(buffer, sizeof(buffer), "---[UNCLAIMED CREDIT SLOT]---\n");
+	StrCat(buffer, sizeof(buffer), "Dispenzor's Fun Servers - Release Host community!\n");
+	StrCat(buffer, sizeof(buffer), "Red Sun Over Paradise - Beta Host community!\n");
 	StrCat(buffer, sizeof(buffer), "---[UNCLAIMED CREDIT SLOT]---\n");
 	StrCat(buffer, sizeof(buffer), "---[UNCLAIMED CREDIT SLOT]---\n");
 	StrCat(buffer, sizeof(buffer), "---[UNCLAIMED CREDIT SLOT]---\n");
@@ -101,8 +102,10 @@ void Menus_Init()
 	SetMenuTitle(g_hMenuSettings, "Settings \n \n");
 	AddMenuItem(g_hMenuSettings, "0", "Boss Selection");
 	AddMenuItem(g_hMenuSettings, "0", "Boss Arrow");
+	AddMenuItem(g_hMenuSettings, "0", "Boss Music");
 	AddMenuItem(g_hMenuSettings, "0", "Revival Preference");
 	
+	// To-Do replace this with a dynamic algo
 	g_hBossSelect = CreateMenu(Menu_Toggle);
 	SetMenuTitle(g_hBossSelect, "Toggle boss selection \n \n");
 	AddMenuItem(g_hBossSelect, "0", "Disable");
@@ -117,6 +120,12 @@ void Menus_Init()
 	SetMenuTitle(g_hBossArrow, "Toggle Boss Arrow \n \n");
 	AddMenuItem(g_hBossArrow, "0", "Disable");
 	AddMenuItem(g_hBossArrow, "0", "Enable");
+	
+	g_hBossMusic = CreateMenu(Menu_Toggle);
+	SetMenuTitle(g_hBossMusic, "Toggle Boss Music \n \n");
+	AddMenuItem(g_hBossMusic, "0", "Disable");
+	AddMenuItem(g_hBossMusic, "0", "Enable");
+	
 }
 
 public int Menu_Main(Handle menu, MenuAction action, int param1, int param2)
@@ -140,8 +149,9 @@ public int Menu_Settings(Handle menu, MenuAction action, int param1, int param2)
 		switch (param2)
 		{
 			case 0: DisplayMenu(g_hBossSelect, param1, MENU_TIME_FOREVER);
-			case 2: DisplayMenu(g_hRevivalSelect, param1, MENU_TIME_FOREVER);
 			case 1: DisplayMenu(g_hBossArrow, param1, MENU_TIME_FOREVER);
+			case 2: DisplayMenu(g_hBossMusic, param1, MENU_TIME_FOREVER);
+			case 3: DisplayMenu(g_hRevivalSelect, param1, MENU_TIME_FOREVER);
 			default: DisplayMenu(g_hMenuMain, param1, MENU_TIME_FOREVER);
 		}
 	}
@@ -163,6 +173,10 @@ public int Menu_Toggle(Handle menu, MenuAction action, int param1, int param2)
 		else if (g_hBossArrow == menu)
 		{
 			g_iPlayerPreferences[param1][PlayerPreference_DisplayBossArrow] = bValue;
+		}
+		else if (g_hBossMusic == menu)
+		{
+			g_iPlayerPreferences[param1][PlayerPreference_BossMusic] = bValue;
 		}
 		
 		DisplayMenu(g_hMenuSettings, param1, MENU_TIME_FOREVER);

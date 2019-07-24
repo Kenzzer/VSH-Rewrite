@@ -1,10 +1,11 @@
 void Preferences_Save(int iClient)
 {
 	char s[64];
-	Format(s, sizeof(s), "%d ; %d ; %d",
+	Format(s, sizeof(s), "%d ; %d ; %d ; %d",
 		g_iPlayerPreferences[iClient][PlayerPreference_PickAsBoss], 
 		g_iPlayerPreferences[iClient][PlayerPreference_RevivalSelect],
-		g_iPlayerPreferences[iClient][PlayerPreference_DisplayBossArrow]);
+		g_iPlayerPreferences[iClient][PlayerPreference_DisplayBossArrow],
+		g_iPlayerPreferences[iClient][PlayerPreference_BossMusic]);
 		
 	SetClientCookie(iClient, g_hPlayerPreferences, s);
 }
@@ -18,6 +19,7 @@ void Preferences_Get(int iClient)
 	g_iPlayerPreferences[iClient][PlayerPreference_PickAsBoss] = true;
 	g_iPlayerPreferences[iClient][PlayerPreference_RevivalSelect] = true;
 	g_iPlayerPreferences[iClient][PlayerPreference_DisplayBossArrow] = true;
+	g_iPlayerPreferences[iClient][PlayerPreference_BossMusic] = true;
 	
 	if (sCookie[0])
 	{
@@ -29,6 +31,8 @@ void Preferences_Get(int iClient)
 		if (count > 1)
 			g_iPlayerPreferences[iClient][PlayerPreference_RevivalSelect] = view_as<bool>(StringToInt(s2[1]));
 		if (count > 2)
-			g_iPlayerPreferences[iClient][PlayerPreference_DisplayBossArrow] = view_as<bool>(StringToInt(s2[1]));
+			g_iPlayerPreferences[iClient][PlayerPreference_DisplayBossArrow] = view_as<bool>(StringToInt(s2[2]));
+		if (count > 3)
+			g_iPlayerPreferences[iClient][PlayerPreference_BossMusic] = view_as<bool>(StringToInt(s2[3]));
 	}
 }

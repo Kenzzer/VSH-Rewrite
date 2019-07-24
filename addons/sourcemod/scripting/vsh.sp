@@ -299,7 +299,8 @@ enum PlayerPreferences
 {
 	bool:PlayerPreference_RevivalSelect,
 	bool:PlayerPreference_PickAsBoss,
-	bool:PlayerPreference_DisplayBossArrow
+	bool:PlayerPreference_DisplayBossArrow,
+	bool:PlayerPreference_BossMusic
 };
 int g_iPlayerPreferences[TF_MAXPLAYERS+1][PlayerPreferences];
 Handle g_hClientSpecialRoundTimer[TF_MAXPLAYERS+1] = {null, ...};
@@ -1844,8 +1845,11 @@ public Action Timer_MusicInitialDelay(Handle hTimer, CBaseBoss boss)
 	float flMusicTime, flInitDelay;
 	g_clientBoss[iClient].GetMusicInfo(g_sBossMusic, sizeof(g_sBossMusic), flMusicTime, flInitDelay);
 	
-	if (strcmp(g_sBossMusic, "") != 0)
-		EmitSoundToAll(g_sBossMusic);
+	if (!g_sBossMusic[0]) return Plugin_Stop;
+	
+	for (int i = MaxClients; i > 0; i--)
+		if (IsClientInGame(i) && g_iPlayerPreferences[i][PlayerPreference_BossMusic])
+			EmitSoundToClient(i, g_sBossMusic);
 	
 	if (flMusicTime > 0.0)
 		g_hTimerBossMusic = CreateTimer(flMusicTime, Timer_Music, boss, TIMER_REPEAT);
@@ -1870,7 +1874,10 @@ public Action Timer_Music(Handle hTimer, CBaseBoss boss)
 		return Plugin_Stop;
 	}
 	
-	EmitSoundToAll(g_sBossMusic);
+	for (int i = MaxClients; i > 0; i--)
+		if (IsClientInGame(i) && g_iPlayerPreferences[i][PlayerPreference_BossMusic])
+			EmitSoundToClient(i, g_sBossMusic);
+	
 	return Plugin_Continue;
 }
 

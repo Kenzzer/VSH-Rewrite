@@ -404,6 +404,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	LoadTranslations("core.phrases");
+	LoadTranslations("common.phrases");
+	LoadTranslations("basetriggers.phrases");
+	
 	g_hPlayerPreferences = RegClientCookie("vsh_preferences", "VSH Player preferences", CookieAccess_Protected);
 	
 	HookEvent("teamplay_round_start", Event_RoundStart);
@@ -2009,13 +2013,47 @@ public Action Command_SetCpUnlockTime(int iClient, int iArgs)
 public Action Command_AddQueuePoints(int iClient, int iArgs)
 {
 	if (!g_bEnabled) return Plugin_Handled;
-	if (iArgs != 1 || iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient)) return Plugin_Handled;
+	if (iArgs < 1 || iArgs > 2 || iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient)) return Plugin_Handled;
 	
 	if (VSH_IsMaker(iClient))
 	{
 		char sVal[10];
-		GetCmdArg(1, sVal, sizeof(sVal));
-		Queue_AddPlayerPoints(iClient, StringToInt(sVal));
+		
+		if (iArgs == 2)
+		{
+			char sTarget[32];
+			GetCmdArg(1, sTarget, sizeof(sTarget));
+			GetCmdArg(2, sVal, sizeof(sVal));
+			
+			int iQueuePts = StringToInt(sVal);
+			
+			char sTargetName[MAX_TARGET_LENGTH];
+			int iTargetList[TF_MAXPLAYERS+1], iTargetCount;
+			bool bIsML;
+			
+			if ((iTargetCount = ProcessTargetString(
+				sTarget,
+				iClient,
+				iTargetList,
+				TF_MAXPLAYERS+1,
+				COMMAND_FILTER_NO_IMMUNITY,
+				sTargetName,
+				sizeof(sTargetName),
+				bIsML)) <= 0)
+			{
+				ReplyToTargetError(iClient, iTargetCount);
+				return Plugin_Handled;
+			}
+			
+			for (int i = 0; i < iTargetCount; i++)
+				Queue_AddPlayerPoints(iTargetList[i], iQueuePts);
+		}
+		else
+		{
+			GetCmdArg(1, sVal, sizeof(sVal));
+			Queue_AddPlayerPoints(iClient, StringToInt(sVal));
+		}
+		
 		return Plugin_Handled;
 	}
 	

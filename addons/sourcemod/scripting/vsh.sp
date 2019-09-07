@@ -9,8 +9,6 @@
 #include <tf2attributes>
 #include <dhooks>
 #include <vsh>
-//#include <benextension>
-//#include <sendproxy>
 
 #define PLUGIN_VERSION "0.0.4e"
 
@@ -360,8 +358,11 @@ Handle g_hPlayerPreferences;
 #include "vsh/network.sp"
 #include "vsh/config.sp"
 Config config;
+
 #include "vsh/base_ability.sp"
 #include "vsh/base_boss.sp"
+CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
+
 #include "vsh/client.sp"
 #include "vsh/death_rings.sp"
 
@@ -399,6 +400,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	RegPluginLibrary("vsh");
 	CBaseBoss.RegisterNatives();
+	
 	return APLRes_Success;
 }
 

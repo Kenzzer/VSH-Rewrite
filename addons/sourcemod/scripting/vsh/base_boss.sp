@@ -1,22 +1,4 @@
-#define BOSS_PROPERTY(%1)	public int Native_CBaseBoss%1Set(Handle plugin, int numParams) \
-{ \
-	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1)); \
-	boss.%1 = view_as<any>(GetNativeCell(2)); \
-} \
-public int Native_CBaseBoss%1Get(Handle plugin, int numParams) \
-{ \
-	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1)); \
-	return view_as<int>(boss.%1); \
-}
-
-
-#define BOSS_PROPERTY_REGISTER(%1,%2) char s_%1_[64]; \
-Format(s_%1_, sizeof(s_%1_), "VSHBoss.%s.set", %2); \
-CreateNative(s_%1_, Native_CBaseBoss%1Set); \
-Format(s_%1_, sizeof(s_%1_), "VSHBoss.%s.get", %2); \
-CreateNative(s_%1_, Native_CBaseBoss%1Get);
-
-static char g_sClientBossType[TF_MAXPLAYERS+1][64];
+static char g_sClientBossType[TF_MAXPLAYERS+1][VSH_BOSS_TYPE_LEN];
 static char g_sClientRageMusic[TF_MAXPLAYERS+1][255];
 
 static int g_iClientBossMaxHealth[TF_MAXPLAYERS+1];
@@ -39,6 +21,7 @@ static IAbility g_iClientBossAbility[TF_MAXPLAYERS+1][MAX_BOSS_ABILITY];
 
 static Handle g_hClientBossModelTimer[TF_MAXPLAYERS+1];
 static Handle g_hClientBossRageMusicFadeTime[TF_MAXPLAYERS+1];
+static Handle g_hClientBossPlugin[TF_MAXPLAYERS+1];
 static Handle g_hBossRageHud;
 
 static int g_iParticleRedStars = -1;
@@ -49,6 +32,8 @@ static int g_iParticleFlashRed = -1;
 static int g_iParticleMegaFlash = -1;
 static int g_iParticleRageFlashRed = -1;
 static int g_iParticleRageFlashBlu = -1;
+
+static StringMap g_strMapBossTypes = null;
 
 methodmap CBaseBoss
 {
@@ -255,6 +240,18 @@ methodmap CBaseBoss
 		}
 	}
 	
+	property Handle hPlugin
+	{
+		public get()
+		{
+			return g_hClientBossPlugin[this.Index];
+		}
+		public set(Handle val)
+		{
+			g_hClientBossPlugin[this.Index] = val;
+		}
+	}
+	
 	public void SetType(char[] type)
 	{
 		strcopy(g_sClientBossType[this.Index], sizeof(g_sClientBossType[]), type);
@@ -265,9 +262,9 @@ methodmap CBaseBoss
 		char sFunc[1000];
 		Format(sFunc, sizeof(sFunc), "%s.%s", g_sClientBossType[this.Index], sName);
 		Function func;
-		if ((func = GetFunctionByName(INVALID_HANDLE, sFunc)) != INVALID_FUNCTION)
+		if ((func = GetFunctionByName(this.hPlugin, sFunc)) != INVALID_FUNCTION)
 		{
-			Call_StartFunction(INVALID_HANDLE, func);
+			Call_StartFunction(this.hPlugin, func);
 			Call_PushCell(this);
 			return true;
 		}
@@ -314,9 +311,12 @@ methodmap CBaseBoss
 		this.iMaxHealth = iCalculatedHealth;
 	}
 	
-	public CBaseBoss(int client, char[] type)
+	public CBaseBoss(int iClient, char[] sType)
 	{
-		CBaseBoss boss = view_as<CBaseBoss>(client);
+		Handle hCallPlugin = INVALID_HANDLE;
+		g_strMapBossTypes.GetValue(sType, hCallPlugin);
+		
+		CBaseBoss boss = view_as<CBaseBoss>(iClient);
 		boss.flSpeed = 370.0;
 		boss.flSpeedMult = 0.07;
 		boss.flFallDamageCap = 100.0;
@@ -325,68 +325,69 @@ methodmap CBaseBoss
 		boss.flEnvDamageCap = 400.0;
 		boss.flGlowTime = -1.0;
 		boss.IsMinion = false;
+		boss.hPlugin = hCallPlugin;
+		boss.flRageLastTime = 0.0;
 		
-		strcopy(g_sClientBossType[client], sizeof(g_sClientBossType[]), type);
+		strcopy(g_sClientBossType[iClient], sizeof(g_sClientBossType[]), sType);
 		
 		for (int i = 0; i < MAX_BOSS_ABILITY; i++)
-			g_iClientBossAbility[client][i] = INVALID_ABILITY;
+			g_iClientBossAbility[iClient][i] = INVALID_ABILITY;
 		
-		if (boss.FindFunction(type))
+		if (boss.FindFunction(sType))
 			Call_Finish();
 		
 		if (g_hBossRageHud == null)
 			g_hBossRageHud = CreateHudSynchronizer();
 		
-		if (g_hClientBossModelTimer[client] != null)
-			delete g_hClientBossModelTimer[client];
+		if (g_hClientBossModelTimer[iClient] != null)
+			delete g_hClientBossModelTimer[iClient];
 		
-		g_hClientBossModelTimer[client] = CreateTimer(0.5, Timer_ApplyBossModel, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+		g_hClientBossModelTimer[iClient] = CreateTimer(0.5, Timer_ApplyBossModel, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 		
-		g_bClientBossActive[client] = true;
-		g_sClientRageMusic[client] = "";
-		g_hClientBossRageMusicFadeTime[client] = null;
-		g_flClientBossRageMusicVolume[client] = 1.0;
-		g_flClientBossRageLastTime[client] = 0.0;
+		g_bClientBossActive[iClient] = true;
+		g_sClientRageMusic[iClient] = "";
+		g_hClientBossRageMusicFadeTime[iClient] = null;
+		g_flClientBossRageMusicVolume[iClient] = 1.0;
 		return boss;
 	}
 	
-	public IAbility RegisterAbility(char[] type)
+	public IAbility RegisterAbility(char[] sType)
 	{
 		for (int i = 0; i < MAX_BOSS_ABILITY; i++)
 		{
 			if (g_iClientBossAbility[this.Index][i] == INVALID_ABILITY)
 			{
-				g_iClientBossAbility[this.Index][i] = IAbility(this.Index, i, type);
+				g_iClientBossAbility[this.Index][i] = IAbility(this.Index, i, sType);
 				return g_iClientBossAbility[this.Index][i];
 			}
 		}
 		return INVALID_ABILITY;
 	}
 	
-	public IAbility FindAbility(char[] type)
+	public IAbility FindAbility(char[] sType)
 	{
 		for (int i = 0; i < MAX_BOSS_ABILITY; i++)
 		{
 			if (g_iClientBossAbility[this.Index][i] != INVALID_ABILITY)
 			{
-				char sType[64];
-				g_iClientBossAbility[this.Index][i].GetType(sType, sizeof(sType));
-				if (strcmp(sType, type) == 0)
+				char sAbilityType[64];
+				g_iClientBossAbility[this.Index][i].GetType(sAbilityType, sizeof(sAbilityType));
+				if (strcmp(sAbilityType, sType) == 0)
 					return g_iClientBossAbility[this.Index][i];
 			}
 		}
 		return INVALID_ABILITY;
 	}
 	
-	public void UnRegisterAbility(char[] type)
+	public void UnRegisterAbility(char[] sType)
 	{
 		for (int i = 0; i < MAX_BOSS_ABILITY; i++)
 		{
 			if (g_iClientBossAbility[this.Index][i] != INVALID_ABILITY)
 			{
-				char sType[64];
-				g_iClientBossAbility[this.Index][i].GetType(sType, sizeof(sType));
-				if (strcmp(sType, type) == 0)
+				char sAbilityType[64];
+				g_iClientBossAbility[this.Index][i].GetType(sAbilityType, sizeof(sAbilityType));
+				if (strcmp(sAbilityType, sType) == 0)
 					g_iClientBossAbility[this.Index][i] = INVALID_ABILITY;
 			}
 		}
@@ -1109,46 +1110,50 @@ methodmap CBaseBoss
 	
 	public static void RegisterNatives()
 	{
-		BOSS_PROPERTY_REGISTER(flSpeed, "flSpeed")
-		BOSS_PROPERTY_REGISTER(flFallDamageCap, "flFallDamageCap")
-		BOSS_PROPERTY_REGISTER(flBackStabDamage, "flBackStabDamage")
-		BOSS_PROPERTY_REGISTER(flEnvDamageCap, "flEnvDamageCap")
-		BOSS_PROPERTY_REGISTER(flGlowTime, "flGlowTime")
-		BOSS_PROPERTY_REGISTER(flRageLastTime, "flRageLastTime")
-		BOSS_PROPERTY_REGISTER(iMaxHealth, "iMaxHealth")
-		BOSS_PROPERTY_REGISTER(iHealth, "iHealth")
-		BOSS_PROPERTY_REGISTER(iMaxRageDamage, "iMaxRageDamage")
-		BOSS_PROPERTY_REGISTER(iRageDamage, "iRageDamage")
-		BOSS_PROPERTY_REGISTER(IsMinion, "IsMinion")
-		BOSS_PROPERTY_REGISTER(IsValid, "IsValid")
+		g_strMapBossTypes = new StringMap();
+		
+		CreateNative("VSHBoss.flSpeed.set", Native_CBaseBossflSpeedSet);
+		CreateNative("VSHBoss.flSpeed.get", Native_CBaseBossflSpeedGet);
+		
+		CreateNative("VSHBoss.flFallDamageCap.set", Native_CBaseBossflFallDamageCapSet);
+		CreateNative("VSHBoss.flFallDamageCap.get", Native_CBaseBossflFallDamageCapGet);
+		
+		CreateNative("VSHBoss.flBackStabDamage.set", Native_CBaseBossflBackStabDamageSet);
+		CreateNative("VSHBoss.flBackStabDamage.get", Native_CBaseBossflBackStabDamageGet);
+		
+		CreateNative("VSHBoss.flEnvDamageCap.set", Native_CBaseBossflEnvDamageCapSet);
+		CreateNative("VSHBoss.flEnvDamageCap.get", Native_CBaseBossflEnvDamageCapGet);
+		
+		CreateNative("VSHBoss.flGlowTime.set", Native_CBaseBossflGlowTimeSet);
+		CreateNative("VSHBoss.flGlowTime.get", Native_CBaseBossflGlowTimeGet);
+		
+		CreateNative("VSHBoss.flRageLastTime.set", Native_CBaseBossflRageLastTimeSet);
+		CreateNative("VSHBoss.flRageLastTime.get", Native_CBaseBossflRageLastTimeGet);
+		
+		CreateNative("VSHBoss.iMaxHealth.set", Native_CBaseBossiMaxHealthSet);
+		CreateNative("VSHBoss.iMaxHealth.get", Native_CBaseBossiMaxHealthGet);
+		
+		CreateNative("VSHBoss.iHealth.set", Native_CBaseBossiHealthSet);
+		CreateNative("VSHBoss.iHealth.get", Native_CBaseBossiHealthGet);
+		
+		CreateNative("VSHBoss.iMaxRageDamage.set", Native_CBaseBossiMaxRageDamageSet);
+		CreateNative("VSHBoss.iMaxRageDamage.get", Native_CBaseBossiMaxRageDamageGet);
+		
+		CreateNative("VSHBoss.iRageDamage.set", Native_CBaseBossiRageDamageSet);
+		CreateNative("VSHBoss.iRageDamage.get", Native_CBaseBossiRageDamageGet);
+		
+		CreateNative("VSHBoss.IsMinion.set", Native_CBaseBossIsMinionSet);
+		CreateNative("VSHBoss.IsMinion.get", Native_CBaseBossIsMinionGet);
+		
+		CreateNative("VSHBoss.IsValid.set", Native_CBaseBossIsValidSet);
+		CreateNative("VSHBoss.IsValid.get", Native_CBaseBossIsValidGet);
 		
 		CreateNative("VSHBoss.VSHBoss", Native_CBaseBossVSHBoss);
 		CreateNative("VSHBoss.GetType", Native_CBaseBossGetType);
+		
+		CreateNative("VSHBoss.Register", Native_CBaseBossRegister);
+		CreateNative("VSHBoss.Unregister", Native_CBaseBossUnRegister);
 	}
-}
-CBaseBoss g_clientBoss[TF_MAXPLAYERS+1];
-
-BOSS_PROPERTY(flSpeed)
-BOSS_PROPERTY(flFallDamageCap)
-BOSS_PROPERTY(flBackStabDamage)
-BOSS_PROPERTY(flEnvDamageCap)
-BOSS_PROPERTY(flGlowTime)
-BOSS_PROPERTY(flRageLastTime)
-BOSS_PROPERTY(iMaxHealth)
-BOSS_PROPERTY(iHealth)
-BOSS_PROPERTY(iMaxRageDamage)
-BOSS_PROPERTY(iRageDamage)
-BOSS_PROPERTY(IsMinion)
-BOSS_PROPERTY(IsValid)
-
-public int Native_CBaseBossVSHBoss(Handle plugin, int numParams)
-{
-	return view_as<int>(g_clientBoss[GetNativeCell(1)]);
-}
-
-public int Native_CBaseBossGetType(Handle plugin, int numParams)
-{
-	SetNativeString(2, g_sClientBossType[GetNativeCell(1)], GetNativeCell(3));
 }
 
 void Frame_BossRageMusic(CBaseBoss boss)
@@ -1243,4 +1248,182 @@ stock int CreateWeapon(int client, char[] sName, int index, int level, int qual,
 		StoreToAddress(AttribAddress+view_as<Address>(8), 76561198059675572, NumberType_Int32);
 	
 	return entity;
+}
+
+public int Native_CBaseBossRegister(Handle hPlugin, int iNumParams)
+{
+	char sBossType[VSH_BOSS_TYPE_LEN];
+	GetNativeString(1, sBossType, sizeof(sBossType));
+	if (!g_strMapBossTypes.SetValue(sBossType, hPlugin, false))
+	{
+		char sBuffer[PLATFORM_MAX_PATH];
+		GetPluginFilename(hPlugin, sBuffer, sizeof(sBuffer));
+		ThrowNativeError(SP_ERROR_PARAM, "Boss type %s is already registered through plugin: %s", sBossType, sBuffer);
+	}
+}
+
+public int Native_CBaseBossUnRegister(Handle hPlugin, int iNumParams)
+{
+	char sBossType[VSH_BOSS_TYPE_LEN];
+	GetNativeString(1, sBossType, sizeof(sBossType));
+	
+	Handle hRegisterPlugin = INVALID_HANDLE;
+	if (!g_strMapBossTypes.GetValue(sBossType, hRegisterPlugin)) return; // Fail silently
+
+	if (hRegisterPlugin != hPlugin) ThrowNativeError(SP_ERROR_PARAM, "Can't unregister boss type %s you didn't register it!", sBossType);
+	
+	g_strMapBossTypes.Remove(sBossType);
+}
+
+public int Native_CBaseBossGetType(Handle hPlugin, int iNumParams)
+{
+	SetNativeString(2, g_sClientBossType[GetNativeCell(1)], GetNativeCell(3));
+}
+
+public int Native_CBaseBossVSHBoss(Handle hPlugin, int iNumParams)
+{
+}
+
+public int Native_CBaseBossflSpeedSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.flSpeed = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossflSpeedGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.flSpeed);
+}
+
+public int Native_CBaseBossflFallDamageCapSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.flFallDamageCap = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossflFallDamageCapGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.flFallDamageCap);
+}
+
+public int Native_CBaseBossflBackStabDamageSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.flBackStabDamage = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossflBackStabDamageGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.flBackStabDamage);
+}
+
+public int Native_CBaseBossflEnvDamageCapSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.flEnvDamageCap = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossflEnvDamageCapGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.flEnvDamageCap);
+}
+
+public int Native_CBaseBossflGlowTimeSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.flGlowTime = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossflGlowTimeGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.flGlowTime);
+}
+
+public int Native_CBaseBossflRageLastTimeSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.flRageLastTime = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossflRageLastTimeGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.flRageLastTime);
+}
+
+public int Native_CBaseBossiMaxHealthSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.iMaxHealth = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossiMaxHealthGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.iMaxHealth);
+}
+
+public int Native_CBaseBossiHealthSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.iHealth = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossiHealthGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.iHealth);
+}
+
+public int Native_CBaseBossiMaxRageDamageSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.iMaxRageDamage = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossiMaxRageDamageGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.iMaxRageDamage);
+}
+
+public int Native_CBaseBossiRageDamageSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.iRageDamage = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossiRageDamageGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.iRageDamage);
+}
+
+public int Native_CBaseBossIsMinionSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.IsMinion = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossIsMinionGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.IsMinion);
+}
+
+public int Native_CBaseBossIsValidSet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	boss.IsValid = view_as<any>(GetNativeCell(2));
+}
+
+public int Native_CBaseBossIsValidGet(Handle hPlugin, int iNumParams)
+{
+	CBaseBoss boss = view_as<CBaseBoss>(GetNativeCell(1));
+	return view_as<int>(boss.IsValid);
 }
